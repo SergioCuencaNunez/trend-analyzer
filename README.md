@@ -1,1 +1,1 @@
-# trend-analyzer
+# TrendAnalyzer
