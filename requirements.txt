@@ -10,3 +10,4 @@ pmdarima==2.0.4
 prophet==1.1.5
 statsmodels==0.14.2
 yfinance==0.2.40
+gunicorn==20.1.0
