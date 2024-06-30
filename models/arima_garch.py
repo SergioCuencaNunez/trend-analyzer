@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import pmdarima as pm
 from arch import arch_model
 import statsmodels.api as sm
