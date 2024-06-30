@@ -2,7 +2,7 @@ import os
 from dash import dcc, html
 import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output
-from app_instance import app
+from app_instance import app, server # Ensure server is imported correctly
 import forecast  # Import forecast after app is created
 import home  # Import home after app is created
 import about  # Import about after app is created
