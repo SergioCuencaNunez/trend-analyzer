@@ -551,15 +551,15 @@ def update_forecast_graph(ticker, model_type, forecast_days, earnings_percentage
     # Define recommended buy price
     today_price = data['Close'].iloc[-1]
     recommended_buy_price = today_price
-    buy_date = pd.to_datetime('today').strftime('%B %d, %Y')
+    buy_date = pd.Timestamp.today().strftime('%B %d, %Y')
 
     recommended_sell_price = recommended_buy_price * (1 + earnings_percentage / 100)
 
     if model_type == 'ARIMA-GARCH':
-        future_forecast_data = forecast_data[forecast_data.index >= pd.to_datetime('today')]
+        future_forecast_data = forecast_data[forecast_data.index >= pd.Timestamp.today()]
         possible_sell = (future_forecast_data >= recommended_sell_price).any()
     elif model_type == 'Prophet':
-        future_forecast_data = forecast_data[forecast_data['ds'] >= pd.to_datetime('today')]
+        future_forecast_data = forecast_data[forecast_data['ds'] >= pd.Timestamp.today()]
         possible_sell = (future_forecast_data['yhat'] >= recommended_sell_price).any()
     else:
         future_forecast_data = pd.DataFrame(forecast_data, index=forecast_dates)
