@@ -1,0 +1,167 @@
+body {
+    background-color: #F4F6FC;
+    font-family: 'Hanken Grotesk', sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Prata', serif;
+    margin-bottom: 20px;
+}
+
+.navbar {
+    background-color: #050A30 !important;
+}
+
+.nav-link {
+    color: #F4F6FC !important;
+    transition: color 0.3s;
+}
+
+.nav-link:hover {
+    color: #8D8D8D !important;
+}
+
+.container-fluid {
+    margin-top: 20px;
+    padding-bottom: 40px;
+}
+
+.footer {
+    background-color: #050A30;
+    font-family: 'Hanken Grotesk', sans-serif;
+    color: #F4F6FC;
+    padding: 10px 0;
+    text-align: center;
+    margin-top: 20px;
+}
+
+.footer-link {
+    color: #F4F6FC;
+    transition: color 0.3s;
+}
+
+.footer-link:hover {
+    color: #8D8D8D;
+}
+
+img {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+label[for="model-selection"] {
+    font-family: 'Prata', serif !important;
+}
+
+.fade-in-text {
+    animation: fadeIn 2s ease-in-out;
+}
+
+@keyframes fadeIn {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+}
+
+.zoom-in-image {
+    animation: zoomIn 1s ease-in-out;
+}
+
+@keyframes zoomIn {
+    0% { transform: scale(0.5); }
+    100% { transform: scale(1); }
+}
+
+.fade-in-card {
+    animation: fadeInCard 2s ease-in-out;
+}
+
+@keyframes fadeInCard {
+    0% { opacity: 0; transform: translateY(20px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+.radio-group {
+    display: flex;
+    justify-content: center;
+    gap: 120px; /* Add more space between each radio item */
+    font-family: 'Hanken Grotesk', sans-serif;
+    font-size: 18px; /* Increase font size for elegance */
+    color: #050A30; /* Adjust color for elegance */
+}
+
+.radio-group input {
+    margin-right: 15px; /* Space between radio button and label */
+}
+
+/* Adjust styles for the carousel */
+.carousel-item img {
+    width: 100%;
+    height: 81vh;
+    object-fit: cover;
+}
+
+.carousel-caption {
+    position: absolute;
+    top: 40%;
+    left: 10%;
+    transform: translateY(-50%);
+    color: #000;
+    text-align: left;
+    background: rgba(255, 255, 255, 0.8);
+    padding: 20px;
+    border-radius: 10px;
+    width: 42%;
+    height: 35%; /* Adjusted to auto */
+}
+    
+.carousel.carousel-fade .carousel-item {
+    display: block;
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out; /* Quick fade-out */
+}
+
+.carousel.carousel-fade .carousel-item.active {
+    opacity: 1 !important;
+    transition: opacity 1.5s ease-in-out; /* Smooth fade-in */
+}
+
+.container-fluid {
+    padding: 0;
+}
+
+.carousel-caption h5 {
+    font-size: 2.5rem; /* Increase font size */
+    font-family: 'Prata', serif;
+    padding: 10px 10px 10px 10px; 
+}
+
+.carousel-caption p {
+    padding: 0px 10px 0px 10px; 
+}
+
+.fade-in-container {
+    animation: fadeIn 2s ease-in-out;
+}
+
+.fade-in-element {
+    animation: fadeIn 2s ease-in-out;
+}
+
+.custom-input {
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    padding: 0.375rem 0.75rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: #495057;
+    background-color: #fff;
+    background-clip: padding-box;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.custom-input:focus {
+    border-color: #80bdff;
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+}
