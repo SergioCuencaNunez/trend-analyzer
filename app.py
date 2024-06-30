@@ -1,3 +1,4 @@
+import os
 from dash import dcc, html
 import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output
@@ -70,4 +71,5 @@ def display_page(pathname):
         return "404 Page Not Found"
 
 if __name__ == '__main__':
-    app.run_server()
+    port = int(os.environ.get('PORT', 8050))
+    app.run_server(host='0.0.0.0', port=port)
