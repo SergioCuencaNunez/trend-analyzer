@@ -1,6 +1,7 @@
 arch==7.0.0
 dash==2.17.1
 dash-bootstrap-components==1.6.0
+gunicorn==20.1.0
 keras==3.3.3
 numpy==1.26.1
 pandas==2.2.2
@@ -8,5 +9,5 @@ plotly==5.17.0
 pmdarima==2.0.4
 prophet==1.1.5
 statsmodels==0.14.2
+tensorflow==2.16.1
 yfinance==0.2.40
-gunicorn==20.1.0
