@@ -14,10 +14,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Set environment variable for the port
-ENV PORT 8050
+ENV PORT 8080
 
 # Expose the port
-EXPOSE $PORT
+EXPOSE 8080
 
 # Specify the command to run your app using Gunicorn
-CMD ["gunicorn", "-b", ":$PORT", "app_instance:server"]
+CMD ["gunicorn", "-b", ":8080", "app_instance:server"]
