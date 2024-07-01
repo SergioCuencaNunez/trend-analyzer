@@ -1,20 +1,6 @@
-
-<!-- Include Google Fonts -->
-<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk&family=Prata&display=swap" rel="stylesheet">
-
-<!-- Custom CSS -->
-<style>
-body {
-    font-family: 'Hanken Grotesk', sans-serif;
-}
-h1, h2, h3, h4, h5, h6 {
-    font-family: 'Prata', serif;
-    color: #050A30;
-}
-</style>
-
-<!-- Logo -->
-<img src="assets/logo-dark.png" alt="Logo" width="500">
+<p align="center">
+  <img src="assets/logo-dark.png" alt="Logo" width="500">
+</p>
 
 ## Overview
 
