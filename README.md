@@ -1,5 +1,20 @@
 
-# Trend Analyzer
+<!-- Include Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk&family=Prata&display=swap" rel="stylesheet">
+
+<!-- Custom CSS -->
+<style>
+body {
+    font-family: 'Hanken Grotesk', sans-serif;
+}
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Prata', serif;
+    color: #050A30;
+}
+</style>
+
+<!-- Logo -->
+<img src="assets/logo-dark.png" alt="Logo" width="500">
 
 ## Overview
 
@@ -46,12 +61,14 @@ Trend Analyzer is a web application built with Flask and Dash, designed to analy
    ```
 
 2. **Run the Docker Container** (specifying the platform):
-   * For Intel based:  ```sh
-                        docker run --platform linux/amd64 -p 8080:8080 sergiocuenca1/trend-analyzer:latest
-                        ```
-   * For M1 o later based:  ```sh
-                        docker run --platform linux/arm64 -p 8080:8080 sergiocuenca1/trend-analyzer:latest
-                        ```
+   * For Intel based:  
+      ```sh
+      docker run --platform linux/amd64 -p 8080:8080 sergiocuenca1/trend-analyzer:latest
+      ```
+   * For M1 o later based: 
+      ```sh
+      docker run --platform linux/arm64 -p 8080:8080 sergiocuenca1/trend-analyzer:latest
+      ```
 
 ## Usage
 
