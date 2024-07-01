@@ -4,6 +4,13 @@ FROM python:3.11-slim
 # Set the working directory in the container
 WORKDIR /app
 
+# Install system dependencies required to build h5py
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libhdf5-dev \
+    pkg-config \
+    python3-h5py
+
 # Copy the requirements file into the container
 COPY requirements.txt .
 
@@ -17,7 +24,7 @@ COPY . .
 ENV PORT 8080
 
 # Expose the port
-EXPOSE 8080
+EXPOSE $PORT
 
 # Specify the command to run your app using Gunicorn
 CMD ["gunicorn", "-b", ":8080", "app_instance:server"]
