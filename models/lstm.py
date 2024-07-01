@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import numpy as np
 import pickle
@@ -5,10 +6,25 @@ from keras.models import load_model
 from statsmodels.tsa.stattools import adfuller
 
 def load_lstm(ticker):
-    # Load the pre-trained LSTM model and scaler
-    model = load_model(f'models/{ticker}_lstm_model.h5')
-    with open(f'models/{ticker}_scaler.pkl', 'rb') as f:
-        sc = pickle.load(f)
+    # Get the directory where this script is located
+    script_dir = os.path.dirname(__file__)
+
+    # Construct the full paths to the model and scaler files
+    model_path = os.path.join(script_dir, f'{ticker}_lstm_model.h5')
+    scaler_path = os.path.join(script_dir, f'{ticker}_scaler.pkl')
+
+    # Load the pre-trained LSTM model
+    if os.path.exists(model_path):
+        model = load_model(model_path)
+    else:
+        raise FileNotFoundError(f"Model file not found at {model_path}")
+
+    # Load the scaler
+    if os.path.exists(scaler_path):
+        with open(scaler_path, 'rb') as f:
+            sc = pickle.load(f)
+    else:
+        raise FileNotFoundError(f"Scaler file not found at {scaler_path}")
 
     return model, sc
 
