@@ -17,12 +17,20 @@ layout = dbc.Container([
             dcc.Dropdown(
                 id='index-dropdown',
                 options=[
-                    {'label': 'NVIDIA', 'value': 'NVDA'},
-                    {'label': 'Apple', 'value': 'AAPL'},
-                    {'label': 'Google', 'value': 'GOOGL'},
-                    {'label': 'Amazon', 'value': 'AMZN'}
+                    {'label': 'AAPL', 'value': 'AAPL'},
+                    {'label': 'AMZN', 'value': 'AMZN'},
+                    {'label': 'NVDA', 'value': 'NVDA'},
+                    {'label': 'ASML', 'value': 'ASML'},
+                    {'label': 'TSLA', 'value': 'TSLA'},
+                    {'label': 'GOOGL', 'value': 'GOOGL'},
+                    {'label': 'SMCI', 'value': 'SMCI'},
+                    {'label': 'MARA', 'value': 'MARA'},
+                    {'label': 'RIOT', 'value': 'RIOT'},
+                    {'label': 'MSFT', 'value': 'MSFT'},
+                    {'label': 'NFLX', 'value': 'NFLX'},
+                    {'label': 'MSTR', 'value': 'MSTR'}
                 ],
-                value='NVDA',
+                value='AAPL',
                 className='fade-in-element',
                 style={'margin-bottom': '20px'}
             ),
@@ -32,11 +40,11 @@ layout = dbc.Container([
             dcc.Dropdown(
                 id='forecast-period-dropdown',
                 options=[
+                    {'label': '1 Week', 'value': 7},
                     {'label': '1 Month', 'value': 30},
                     {'label': '3 Months', 'value': 90},
                     {'label': '6 Months', 'value': 180},
-                    {'label': '9 Months', 'value': 270},
-                    {'label': '1 Year', 'value': 365}
+                    {'label': '9 Months', 'value': 270}
                 ],
                 value=90,
                 className='fade-in-element',
@@ -90,7 +98,7 @@ layout = dbc.Container([
 def update_price_graph(ticker):
     data = download_data(ticker)
 
-    moving_average_100 = data['Close'].rolling(window=100).mean()
+    moving_average_50 = data['Close'].rolling(window=50).mean()
     moving_average_200 = data['Close'].rolling(window=200).mean()
     last_price = data['Close'].iloc[-1]
 
@@ -109,9 +117,9 @@ def update_price_graph(ticker):
             ),
             go.Scatter(
                 x=data.index,
-                y=moving_average_100,
+                y=moving_average_50,
                 mode='lines',
-                name='MA 100',
+                name='MA 50',
                 line=dict(color='blue')
             ),
             go.Scatter(
