@@ -3,6 +3,7 @@ import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output
 import plotly.graph_objs as go
 import pandas as pd
+import numpy as np
 from utils import download_data
 from models.arima_garch import fit_arima_garch, forecast_arima_garch
 from models.prophet_model import fit_prophet, forecast_prophet
@@ -456,13 +457,24 @@ def update_forecast_graph(ticker, model_type, forecast_days, earnings_percentage
 
         forecast_dates = pd.date_range(start=data.index[-1], periods=forecast_days, freq='B')
         
+        forecast_data = np.array(forecast_data).flatten()
+   
         # Ensure forecast_data is 1D array for Plotly
         forecast_data = forecast_data.flatten()
         predicted_stock_price = predicted_stock_price.flatten()
 
         # Convert to Pandas Series
         forecast_data_series = pd.Series(forecast_data, index=forecast_dates)
+        
+        # Ensure that predicted_stock_price has the same length as the index
+        if len(predicted_stock_price) > len(data.index[lookback_period:]):
+            predicted_stock_price = predicted_stock_price[:len(data.index[lookback_period:])]
+        elif len(predicted_stock_price) < len(data.index[lookback_period:]):
+            predicted_stock_price = np.append(predicted_stock_price, [predicted_stock_price[-1]] * (len(data.index[lookback_period:]) - len(predicted_stock_price)))
+
+        # Create the predicted stock price series
         predicted_stock_price_series = pd.Series(predicted_stock_price, index=data.index[lookback_period:])
+
         closing_prices_series = pd.Series(closing_prices.flatten(), index=data.index)
 
         min_price = min(closing_prices_series.min(), forecast_data_series.min())
