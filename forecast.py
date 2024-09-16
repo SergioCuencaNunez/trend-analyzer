@@ -7,7 +7,6 @@ import numpy as np
 from utils import download_data
 from models.arima_garch import fit_arima_garch, forecast_arima_garch
 from models.prophet_model import fit_prophet, forecast_prophet
-from models.lstm import load_lstm, fit_lstm, forecast_lstm
 from app_instance import app
 
 layout = dbc.Container([
@@ -70,8 +69,7 @@ layout = dbc.Container([
                     id='model-selection',
                     options=[
                         {'label': 'ARIMA-GARCH', 'value': 'ARIMA-GARCH'},
-                        {'label': 'Prophet', 'value': 'Prophet'},
-                        {'label': 'LSTM', 'value': 'LSTM'}
+                        {'label': 'Prophet', 'value': 'Prophet'}
                     ],
                     value='ARIMA-GARCH',
                     labelStyle={'display': 'inline-block'},
@@ -317,7 +315,7 @@ def update_forecast_graph(ticker, model_type, forecast_days, earnings_percentage
     elif model_type == 'Prophet':
         model, data_prophet = fit_prophet(data)
         forecast_data = forecast_prophet(model, data_prophet, forecast_days)
-
+        
         min_price = min(data['Close'].min(), forecast_data['yhat'].min())
         max_price = max(data['Close'].max(), forecast_data['yhat'].max())
 
@@ -449,125 +447,6 @@ def update_forecast_graph(ticker, model_type, forecast_days, earnings_percentage
             }
         }
 
-    elif model_type == 'LSTM':
-
-        model, sc = load_lstm(ticker)
-        closing_prices, train_returns, scaled_prices, stationary, lookback_period = fit_lstm(data, sc)
-        predicted_stock_price, forecast_data = forecast_lstm(model, sc, closing_prices, train_returns, scaled_prices, stationary, lookback_period, forecast_days)
-
-        forecast_dates = pd.date_range(start=data.index[-1], periods=forecast_days, freq='B')
-        
-        forecast_data = np.array(forecast_data).flatten()
-   
-        # Ensure forecast_data is 1D array for Plotly
-        forecast_data = forecast_data.flatten()
-        predicted_stock_price = predicted_stock_price.flatten()
-
-        # Convert to Pandas Series
-        forecast_data_series = pd.Series(forecast_data, index=forecast_dates)
-        
-        # Ensure that predicted_stock_price has the same length as the index
-        if len(predicted_stock_price) > len(data.index[lookback_period:]):
-            predicted_stock_price = predicted_stock_price[:len(data.index[lookback_period:])]
-        elif len(predicted_stock_price) < len(data.index[lookback_period:]):
-            predicted_stock_price = np.append(predicted_stock_price, [predicted_stock_price[-1]] * (len(data.index[lookback_period:]) - len(predicted_stock_price)))
-
-        # Create the predicted stock price series
-        predicted_stock_price_series = pd.Series(predicted_stock_price, index=data.index[lookback_period:])
-
-        closing_prices_series = pd.Series(closing_prices.flatten(), index=data.index)
-
-        min_price = min(closing_prices_series.min(), forecast_data_series.min())
-        max_price = max(closing_prices_series.max(), forecast_data_series.max())
-
-        shapes.extend([
-            dict(
-                type="line",
-                x0=data.index[-1],
-                y0=min_price,
-                x1=data.index[-1],
-                y1=max_price,
-                line=dict(
-                    color="Black",
-                    width=2,
-                    dash="dash",
-                    name='Forecast Start'
-                ),
-            )
-        ])
-
-        forecast_fig = {
-            'data': [
-                go.Scatter(
-                    x=closing_prices_series.index,
-                    y=closing_prices_series,
-                    mode='lines',
-                    name='Actual Prices',
-                    line=dict(color='blue')
-                ),
-                go.Scatter(
-                    x=predicted_stock_price_series.index,
-                    y=predicted_stock_price_series,
-                    mode='lines',
-                    name='Predicted Prices',
-                    line=dict(color='red')
-                ),
-                go.Scatter(
-                    x=forecast_data_series.index,
-                    y=forecast_data_series,
-                    mode='lines',
-                    name=f'{forecast_days}-Day Forecast',
-                    line=dict(color='green')
-                ),
-                go.Scatter(
-                    x=[data.index[-1]],
-                    y=[closing_prices_series[-1]],
-                    mode='lines+markers',
-                    name='Forecast Start',
-                    line=dict(color='black', dash='dash')
-                ),
-            ],
-            'layout': {
-                'title': {
-                    'text': f'Predicted Stock Price of {ticker} using LSTM',
-                    'font': {'family': 'Prata', 'color': '#050A30'}
-                },
-                'yaxis': {
-                    'title': 'Close Price',
-                    'titlefont': {'family': 'Hanken Grotesk', 'color': '#050A30'},
-                    'tickfont': {'family': 'Hanken Grotesk'},
-                    'range': [min_price, max_price],
-                    'zeroline': False
-                },
-                'xaxis': {
-                    'title': 'Date',
-                    'type': 'date',
-                    'tickformat': '%b %Y',
-                    'tickmode': 'auto',
-                    'nticks': 20,
-                    'tickformatstops': [
-                        {'dtickrange': [None, 86400000], 'value': '%d %b %Y'},
-                        {'dtickrange': [86400000, 604800000], 'value': '%d %b %Y'},
-                        {'dtickrange': [604800000, "M1"], 'value': '%d %b %Y'},
-                        {'dtickrange': ["M1", "M6"], 'value': '%b %Y'},
-                        {'dtickrange': ["M6", None], 'value': '%b %Y'}
-                    ],
-                    'titlefont': {'family': 'Hanken Grotesk', 'color': '#050A30'},
-                    'tickfont': {'family': 'Hanken Grotesk'},
-                    'showline': True,  # Ensure the x-axis line is shown
-                    'linewidth': 1,
-                    'linecolor': 'black'
-                },
-                'plot_bgcolor': 'white',
-                'paper_bgcolor': 'white',
-                'font': {'family': 'Hanken Grotesk'},
-                'showlegend': True,
-                'height': 500,
-                'margin': dict(l=50, r=50, t=50, b=50),
-                'shapes': shapes
-            }
-        }
-
     # Define recommended buy price
     today_price = data['Close'].iloc[-1]
     recommended_buy_price = today_price
@@ -581,9 +460,6 @@ def update_forecast_graph(ticker, model_type, forecast_days, earnings_percentage
     elif model_type == 'Prophet':
         future_forecast_data = forecast_data[forecast_data['ds'] >= pd.Timestamp.today()]
         possible_sell = (future_forecast_data['yhat'] >= recommended_sell_price).any()
-    else:
-        future_forecast_data = pd.DataFrame(forecast_data, index=forecast_dates)
-        possible_sell = (future_forecast_data >= recommended_sell_price).any().any()
 
     if not possible_sell:
         sell_date = "Not possible within forecasted period"
