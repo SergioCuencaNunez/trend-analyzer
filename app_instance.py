@@ -72,7 +72,7 @@ app.layout = html.Div([
     html.Footer([
         html.P([
             dcc.Link('Terms and Conditions', href='/terms', className='footer-link'),
-            " | Sergio Cuenca Núñez, June 2024 | Version: 1.0"
+            " | Sergio Cuenca Núñez, September 2024 | Version: 2.1"
         ], style={'text-align': 'center'}),
     ], className="footer")
 ])

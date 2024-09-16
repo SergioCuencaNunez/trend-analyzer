@@ -3,6 +3,7 @@ import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output
 import plotly.graph_objs as go
 import pandas as pd
+from pandas.tseries.holiday import USFederalHolidayCalendar
 import numpy as np
 from utils import download_data
 from models.arima_garch import fit_arima_garch, forecast_arima_garch
@@ -451,14 +452,25 @@ def update_forecast_graph(ticker, model_type, forecast_days, earnings_percentage
     today_price = data['Close'].iloc[-1]
     recommended_buy_price = today_price
     buy_date = pd.Timestamp.today().strftime('%B %d, %Y')
-
     recommended_sell_price = recommended_buy_price * (1 + earnings_percentage / 100)
 
+    # Initialize holiday calendar
+    cal = USFederalHolidayCalendar()
+    holidays = cal.holidays(start=pd.Timestamp.today(), end=forecast_data.index.max()).to_pydatetime()
+    
+    # Filter future forecast data based on weekends and holidays
     if model_type == 'ARIMA-GARCH':
         future_forecast_data = forecast_data[forecast_data.index >= pd.Timestamp.today()]
+        # Remove weekends and holidays
+        future_forecast_data = future_forecast_data[~future_forecast_data.index.to_series().dt.weekday.isin([5, 6])]
+        future_forecast_data = future_forecast_data[~future_forecast_data.index.isin(holidays)]
         possible_sell = (future_forecast_data >= recommended_sell_price).any()
+
     elif model_type == 'Prophet':
         future_forecast_data = forecast_data[forecast_data['ds'] >= pd.Timestamp.today()]
+        # Remove weekends and holidays
+        future_forecast_data = future_forecast_data[~future_forecast_data['ds'].dt.weekday.isin([5, 6])]
+        future_forecast_data = future_forecast_data[~future_forecast_data['ds'].isin(holidays)]
         possible_sell = (future_forecast_data['yhat'] >= recommended_sell_price).any()
 
     if not possible_sell:
