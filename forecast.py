@@ -4,9 +4,8 @@ from dash.dependencies import Input, Output
 import plotly.graph_objs as go
 import pandas as pd
 from pandas.tseries.holiday import USFederalHolidayCalendar
-import numpy as np
 from utils import download_data
-from models.arima_garch import fit_arima_garch, forecast_arima_garch
+from models.xgboost_model import prepare_and_train_model, forecast_with_rolling, forecast_without_rolling
 from models.prophet_model import fit_prophet, forecast_prophet
 from app_instance import app
 
@@ -24,7 +23,6 @@ layout = dbc.Container([
                     {'label': 'ASML', 'value': 'ASML'},
                     {'label': 'TSLA', 'value': 'TSLA'},
                     {'label': 'GOOGL', 'value': 'GOOGL'},
-                    {'label': 'SMCI', 'value': 'SMCI'},
                     {'label': 'MARA', 'value': 'MARA'},
                     {'label': 'RIOT', 'value': 'RIOT'},
                     {'label': 'MSFT', 'value': 'MSFT'},
@@ -44,10 +42,8 @@ layout = dbc.Container([
                     {'label': '1 Week', 'value': 7},
                     {'label': '1 Month', 'value': 30},
                     {'label': '3 Months', 'value': 90},
-                    {'label': '6 Months', 'value': 180},
-                    {'label': '9 Months', 'value': 270}
                 ],
-                value=90,
+                value=30,
                 className='fade-in-element',
                 style={'margin-bottom': '20px'}
             ),
@@ -69,10 +65,10 @@ layout = dbc.Container([
                 dcc.RadioItems(
                     id='model-selection',
                     options=[
-                        {'label': 'ARIMA-GARCH', 'value': 'ARIMA-GARCH'},
-                        {'label': 'Prophet', 'value': 'Prophet'}
+                        {'label': 'Prophet', 'value': 'Prophet'},
+                        {'label': 'XGBoost', 'value': 'XGBoost'}
                     ],
-                    value='ARIMA-GARCH',
+                    value='Prophet',
                     labelStyle={'display': 'inline-block'},
                     className='radio-group fade-in-element',
                     style={'font-family': 'Hanken Grotesk'}
@@ -198,19 +194,23 @@ def update_forecast_graph(ticker, model_type, forecast_days, earnings_percentage
         
     shapes = []
 
-    if model_type == 'ARIMA-GARCH':
-        arima_model, garch_fitted, train_returns, test_returns, closing_prices = fit_arima_garch(data)
-        predicted_prices, forecast_data = forecast_arima_garch(arima_model, garch_fitted, train_returns, test_returns, closing_prices, forecast_days)
-        
-        min_price = min(closing_prices.min(), forecast_data.min(), predicted_prices.min())
-        max_price = max(closing_prices.max(), forecast_data.max(), predicted_prices.max())
+    if model_type == 'XGBoost':
+        train_df, test_df, scaler, best_model, feature_cols, y_test, y_pred_test = prepare_and_train_model(data)
+
+        if ticker in ['AAPL', 'MSFT', 'NVDA', 'GOOGL']:
+            test_predicted, forecast_data = forecast_with_rolling(best_model, train_df, test_df, feature_cols, scaler, forecast_days=forecast_days)
+        else:
+            test_predicted, forecast_data = forecast_without_rolling(best_model, test_df, scaler, feature_cols, y_test, y_pred_test, forecast_days=forecast_days)
+        print(test_predicted)
+        min_price = min(data['Close'].min(), forecast_data.min())
+        max_price = max(data['Close'].max(), forecast_data.max())
 
         shapes.extend([
             dict(
                 type="line",
-                x0=closing_prices.index[train_returns.shape[0]],
+                x0=test_df.index[0],
                 y0=min_price,
-                x1=closing_prices.index[train_returns.shape[0]],
+                x1=test_df.index[0],
                 y1=max_price,
                 line=dict(
                     color="Purple",
@@ -237,15 +237,15 @@ def update_forecast_graph(ticker, model_type, forecast_days, earnings_percentage
         forecast_fig = {
             'data': [
                 go.Scatter(
-                    x=closing_prices.index,
-                    y=closing_prices,
+                    x=data.index,
+                    y=data['Close'],
                     mode='lines',
                     name='Actual Prices',
                     line=dict(color='blue')
                 ),
                 go.Scatter(
-                    x=predicted_prices.index,
-                    y=predicted_prices,
+                    x=test_df.index,
+                    y=test_predicted,
                     mode='lines',
                     name='Predicted Prices',
                     line=dict(color='red')
@@ -258,8 +258,8 @@ def update_forecast_graph(ticker, model_type, forecast_days, earnings_percentage
                     line=dict(color='green')
                 ),
                 go.Scatter(
-                    x=[closing_prices.index[train_returns.shape[0]]],
-                    y=[closing_prices.iloc[train_returns.shape[0]]],
+                    x=[test_df.index[0]],
+                    y=[data['Close'].iloc[len(train_df)]],
                     mode='lines+markers',
                     name='Train-Test Split',
                     line=dict(color='purple', dash='dash')
@@ -274,7 +274,7 @@ def update_forecast_graph(ticker, model_type, forecast_days, earnings_percentage
             ],
             'layout': {
                 'title': {
-                    'text': f'Predicted Stock Price of {ticker} using ARIMA-GARCH',
+                    'text': f'Predicted Stock Price of {ticker} using XGBoost',
                     'font': {'family': 'Prata', 'color': '#050A30'}
                 },
                 'yaxis': {
@@ -299,7 +299,7 @@ def update_forecast_graph(ticker, model_type, forecast_days, earnings_percentage
                     ],
                     'titlefont': {'family': 'Hanken Grotesk', 'color': '#050A30'},
                     'tickfont': {'family': 'Hanken Grotesk'},
-                    'showline': True,  # Ensure the x-axis line is shown
+                    'showline': True,
                     'linewidth': 1,
                     'linecolor': 'black'
                 },
@@ -312,7 +312,6 @@ def update_forecast_graph(ticker, model_type, forecast_days, earnings_percentage
                 'shapes': shapes
             }
         }
-
     elif model_type == 'Prophet':
         model, data_prophet = fit_prophet(data)
         forecast_data = forecast_prophet(model, data_prophet, forecast_days)
@@ -365,7 +364,7 @@ def update_forecast_graph(ticker, model_type, forecast_days, earnings_percentage
                 go.Scatter(
                     x=forecast_data['ds'][:-forecast_days],
                     y=forecast_data['yhat_lower'][:-forecast_days],
-                    fill='tonexty',  # Fill area between yhat and yhat_lower
+                    fill='tonexty',
                     mode='lines',
                     line=dict(color='orangered', width=0.4),
                     fillcolor='rgba(255, 69, 0, 0.2)',
@@ -373,8 +372,8 @@ def update_forecast_graph(ticker, model_type, forecast_days, earnings_percentage
                     showlegend=False
                 ),
                 go.Scatter(
-                    x=forecast_data['ds'][-forecast_days:],  # Only the new forecast period
-                    y=forecast_data['yhat'][-forecast_days:],  # Only the new forecast period
+                    x=forecast_data['ds'][-forecast_days:],
+                    y=forecast_data['yhat'][-forecast_days:],
                     mode='lines',
                     name=f'{forecast_days}-Day Forecast',
                     line=dict(color='green')
@@ -392,7 +391,7 @@ def update_forecast_graph(ticker, model_type, forecast_days, earnings_percentage
                 go.Scatter(
                     x=forecast_data['ds'][-forecast_days:],
                     y=forecast_data['yhat_lower'][-forecast_days:],
-                    fill='tonexty',  # Fill area between yhat and yhat_lower
+                    fill='tonexty',
                     mode='lines',
                     line=dict(color='green', width=0.4),
                     fillcolor='rgba(28, 184, 24, 0.25)',
@@ -459,7 +458,7 @@ def update_forecast_graph(ticker, model_type, forecast_days, earnings_percentage
     holidays = cal.holidays(start=pd.Timestamp.today(), end=forecast_data.index.max()).to_pydatetime()
     
     # Filter future forecast data based on weekends and holidays
-    if model_type == 'ARIMA-GARCH':
+    if model_type == 'XGBoost':
         future_forecast_data = forecast_data[forecast_data.index >= pd.Timestamp.today()]
         # Remove weekends and holidays
         future_forecast_data = future_forecast_data[~future_forecast_data.index.to_series().dt.weekday.isin([5, 6])]
@@ -477,7 +476,7 @@ def update_forecast_graph(ticker, model_type, forecast_days, earnings_percentage
         sell_date = "Not possible within forecasted period"
         recommended_sell_price = "N/A"
     else:
-        if model_type == 'ARIMA-GARCH':
+        if model_type == 'XGBoost':
             sell_candidates = future_forecast_data[future_forecast_data >= recommended_sell_price]
             sell_date_idx = sell_candidates.index[0] if not sell_candidates.empty else None
         elif model_type == 'Prophet':
