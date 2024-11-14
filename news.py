@@ -30,9 +30,9 @@ def fetch_news_logo(news_link):
         return "default_logo.png"
 
 # Function to get ratings
-def get_stock_ratings(ticker):
+def get_stock_ratings(ticker, limit=10):
     stock = finvizfinance(ticker)
-    ratings = stock.ticker_outer_ratings()
+    ratings = stock.ticker_outer_ratings().head(limit)  # Display only top 10 ratings initially
     ratings['Date'] = pd.to_datetime(ratings['Date']).dt.strftime('%b-%d-%y')  # Formatting date to 'Nov-04-24'
     return ratings
 
@@ -286,7 +286,6 @@ def generate_news_card(news_item):
         className='fade-in-card'
     )
 
-# Layout with dcc.Store to keep track of the click count
 layout = dbc.Container([
     html.H1("Stock News & Performance", className='fade-in-element', style={'text-align': 'center', 'margin-top': '40px', 'font-family': 'Prata'}),
     dcc.Store(id='clicks-store', data=1),  # Store for tracking clicks
@@ -327,20 +326,20 @@ layout = dbc.Container([
     
     dbc.Row(
         dbc.Col(
-            dcc.Loading(
+            dcc.Loading(  # This loading only affects news and performance data
                 id="loading-full-content",
                 type="default",
                 children=html.Div(
                     id='data-content',
                     children=[
                         dbc.Row([
-                            dbc.Col(html.H2("Relevant Information", id='info-title', className='fade-in-text', style={'text-align': 'center', 'font-family': 'Prata', 'display': 'none'}), width=12, style={'text-align': 'center'}),
+                            dbc.Col(html.H3("Relevant Information", id='info-title', className='fade-in-text', style={'text-align': 'center', 'font-family': 'Prata', 'display': 'none'}), width=12, style={'text-align': 'center'}),
                         ]),
                         dbc.Row([
                             dbc.Col(html.Div(id='performance-table', className='fade-in-element'), width=12)
                         ], style={'margin-bottom': '20px'}),
                         dbc.Row([
-                            dbc.Col(html.H2(f"News - {datetime.today().strftime('%A, %d %b. %Y')}", id='news-title', className='fade-in-text', style={'text-align': 'center', 'font-family': 'Prata', 'display': 'none'}), width=12, style={'text-align': 'center'}),
+                            dbc.Col(html.H3(f"News - {datetime.today().strftime('%A, %d %b. %Y')}", id='news-title', className='fade-in-text', style={'text-align': 'center', 'font-family': 'Prata', 'display': 'none'}), width=12, style={'text-align': 'center'}),
                         ]),
                         dbc.Row(
                             id='news-cards-row', 
@@ -349,17 +348,27 @@ layout = dbc.Container([
                         ),
                         dbc.Row(
                             dbc.Col(
-                                dbc.Button("Load More", id='load-more-button', color="primary", className='fade-in-card'),
+                                dbc.Button("Load More News", id='load-more-button', color="primary", className='fade-in-card'),
                                 width="auto",
                                 style={'display': 'flex', 'justify-content': 'center'}
                             ),
-                            className="mb-4 justify-content-center"  # Margin bottom for spacing and center alignment
+                            className="mb-4 justify-content-center"
                         ),
                         dbc.Row([
-                            dbc.Col(html.H2("Ratings", id='ratings-title', className='fade-in-text', style={'text-align': 'center', 'font-family': 'Prata', 'display': 'none'}), width=12, style={'text-align': 'center'}),
+                            dbc.Col(html.H3("Ratings", id='ratings-title', className='fade-in-text', style={'text-align': 'center', 'font-family': 'Prata', 'display': 'none'}), width=12, style={'text-align': 'center'}),
                         ]),
                         dbc.Row([
-                            dbc.Col(html.Div(id='ratings-table', className='fade-in-element'), width=12)
+                            dbc.Col([
+                                html.Div(id='ratings-table', className='fade-in-element'),
+                                dbc.Row(
+                                    dbc.Col(
+                                        dbc.Button("Load More Ratings", id='load-more-ratings-button', color="primary", className='fade-in-card'),
+                                        width="auto"  # The button will only take up the necessary space
+                                    ),
+                                    justify='center',  # Center the button within the row
+                                    style={'margin-top': '10px'}  # Add some space between the table and the button
+                                )
+                            ], width=12)
                         ])
                     ],
                     style={'min-height': '600px'}
@@ -368,6 +377,7 @@ layout = dbc.Container([
         )
     )
 ], fluid=True, className="container")
+
 
 @app.callback(
     Output('clicks-store', 'data'),
@@ -386,20 +396,32 @@ def update_click_count(selected_stock, n_clicks, clicks_data):
 @app.callback(
     [Output('performance-table', 'children'),
      Output('news-cards-row', 'children'),
-     Output('ratings-table', 'children'),
      Output('info-title', 'style'),
-     Output('news-title', 'style'),
-     Output('ratings-title', 'style')],
+     Output('news-title', 'style')],
     [Input('stock-dropdown', 'value'), Input('clicks-store', 'data')]
 )
-def update_stock_info(ticker, clicks_data):
+def update_news_and_performance(ticker, clicks_data):
     news_df = get_stock_news(ticker)
     news_limit = 4 * clicks_data  # Display news based on click count
     
+    # Generate News Cards
     news_cards = [dbc.Col(generate_news_card(news), width=6) for _, news in news_df.head(news_limit).iterrows()]
     
+    # Performance Table
     performance_table = display_performance_data(get_stock_performance_data(ticker))
-    ratings_table = dbc.Table.from_dataframe(get_stock_ratings(ticker), striped=True, bordered=True, hover=True, responsive=True, className='fade-in-element')
+    
     show_style = {'display': 'block'}
     
-    return performance_table, news_cards, ratings_table, show_style, show_style, show_style
+    return performance_table, news_cards, show_style, show_style
+@app.callback(
+    Output('ratings-table', 'children'),
+    [Input('load-more-ratings-button', 'n_clicks')],
+    [State('stock-dropdown', 'value')]
+)
+def update_ratings_table(load_more_ratings_clicks, ticker):
+    # Show all ratings if the button is clicked, else limit to 10
+    ratings_limit = None if load_more_ratings_clicks else 10
+    ratings_df = get_stock_ratings(ticker, limit=ratings_limit)
+    ratings_table = dbc.Table.from_dataframe(ratings_df, striped=True, bordered=True, hover=True, responsive=True, className='fade-in-element')
+    
+    return ratings_table
