@@ -29,17 +29,12 @@ def fetch_news_logo(news_link):
         print(f"Error fetching logo: {e}")
         return "default_logo.png"
 
-# Function to format dates in the ratings table
-def format_ratings_date(ratings_df):
-    ratings_df['Date'] = pd.to_datetime(ratings_df['Date']).dt.strftime('%b-%d-%y')
-    return ratings_df
-
-# Modified get_stock_ratings function to include date formatting
+# Function to get ratings
 def get_stock_ratings(ticker):
     stock = finvizfinance(ticker)
     ratings = stock.ticker_outer_ratings()
-    formatted_ratings = format_ratings_date(ratings)  # Format date column
-    return formatted_ratings
+    ratings['Date'] = pd.to_datetime(ratings['Date']).dt.strftime('%b-%d-%y')  # Formatting date to 'Nov-04-24'
+    return ratings
 
 # Function to get news
 def get_stock_news(ticker):
@@ -48,12 +43,6 @@ def get_stock_news(ticker):
     today = datetime.today().date()
     news_df['Date'] = pd.to_datetime(news_df['Date']).dt.date
     return news_df[news_df['Date'] == today]
-
-# Function to format today's date for the News header
-def get_news_header_date():
-    today = datetime.today()
-    formatted_date = today.strftime("%A, %d %b. %Y")
-    return f"News - {formatted_date}"
 
 # Function to get stock performance data
 def get_stock_performance_data(ticker):
@@ -351,7 +340,7 @@ layout = dbc.Container([
                             dbc.Col(html.Div(id='performance-table', className='fade-in-element'), width=12)
                         ], style={'margin-bottom': '20px'}),
                         dbc.Row([
-                            dbc.Col(html.H2("News", id='news-title', className='fade-in-text', style={'text-align': 'center', 'font-family': 'Prata', 'display': 'none'}), width=12, style={'text-align': 'center'}),
+                            dbc.Col(html.H2(f"News - {datetime.today().strftime('%A, %d %b. %Y')}", id='news-title', className='fade-in-text', style={'text-align': 'center', 'font-family': 'Prata', 'display': 'none'}), width=12, style={'text-align': 'center'}),
                         ]),
                         dbc.Row(
                             id='news-cards-row', 
@@ -393,13 +382,13 @@ def update_click_count(selected_stock, n_clicks, clicks_data):
         return clicks_data + 1
     return clicks_data
 
-# Main callback
+# Main callback to update content based on click count
 @app.callback(
     [Output('performance-table', 'children'),
      Output('news-cards-row', 'children'),
      Output('ratings-table', 'children'),
      Output('info-title', 'style'),
-     Output('news-title', 'children'),  # Updated to Output the header text
+     Output('news-title', 'style'),
      Output('ratings-title', 'style')],
     [Input('stock-dropdown', 'value'), Input('clicks-store', 'data')]
 )
@@ -411,9 +400,6 @@ def update_stock_info(ticker, clicks_data):
     
     performance_table = display_performance_data(get_stock_performance_data(ticker))
     ratings_table = dbc.Table.from_dataframe(get_stock_ratings(ticker), striped=True, bordered=True, hover=True, responsive=True, className='fade-in-element')
-    
-    # Format the header text for News with today's date
-    news_title_text = get_news_header_date()
     show_style = {'display': 'block'}
     
-    return performance_table, news_cards, ratings_table, show_style, news_title_text, show_style
+    return performance_table, news_cards, ratings_table, show_style, show_style, show_style
