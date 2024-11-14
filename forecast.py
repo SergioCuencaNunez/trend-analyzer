@@ -27,6 +27,7 @@ layout = dbc.Container([
                     {'label': 'RIOT', 'value': 'RIOT'},
                     {'label': 'MSFT', 'value': 'MSFT'},
                     {'label': 'NFLX', 'value': 'NFLX'},
+                    {'label': 'SMCI', 'value': 'SMCI'},
                     {'label': 'MSTR', 'value': 'MSTR'}
                 ],
                 value='AAPL',
@@ -197,7 +198,7 @@ def update_forecast_graph(ticker, model_type, forecast_days, earnings_percentage
     if model_type == 'XGBoost':
         train_df, test_df, scaler, best_model, feature_cols, y_test, y_pred_test = prepare_and_train_model(data)
 
-        if ticker in ['AAPL', 'MSFT', 'NVDA', 'GOOGL']:
+        if ticker in ['AAPL', 'MSFT', 'NVDA', 'GOOGL', 'SMCI', 'MSTR']:
             test_predicted, forecast_data = forecast_with_rolling(best_model, train_df, test_df, feature_cols, scaler, forecast_days=forecast_days)
         else:
             test_predicted, forecast_data = forecast_without_rolling(best_model, test_df, scaler, feature_cols, y_test, y_pred_test, forecast_days=forecast_days)

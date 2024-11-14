@@ -54,7 +54,8 @@ app.layout = html.Div([
                         [
                             dbc.NavItem(dcc.Link('HOME', href='/', className='nav-link', style={'margin-right': '20px'})),
                             dbc.NavItem(dcc.Link('FORECAST', href='/forecast', className='nav-link', style={'margin-right': '20px'})),
-                            dbc.NavItem(dcc.Link('ABOUT', href='/about', className='nav-link', style={'margin-right': '20px'})),
+                            dbc.NavItem(dcc.Link('NEWS', href='/news', className='nav-link', style={'margin-right': '20px'})),
+                            dbc.NavItem(dcc.Link('ABOUT', href='/about', className='nav-link', style={'margin-right': '20px'}))
                         ],
                         className="ms-auto",
                         navbar=True,
@@ -81,11 +82,13 @@ app.layout = html.Div([
 def load_validation_layout():
     import forecast
     import home
+    import news
     import about
     import terms
     return html.Div([
         forecast.layout,
         home.layout,
+        news.layout,
         about.layout,
         terms.layout
     ])
@@ -96,6 +99,7 @@ app.validation_layout = load_validation_layout()
 def display_page(pathname):
     import forecast
     import home
+    import news
     import about
     import terms
     
@@ -107,5 +111,7 @@ def display_page(pathname):
         return about.layout
     elif pathname == '/terms':
         return terms.layout
+    elif pathname == '/news':
+        return news.layout
     else:
         return "404 Page Not Found"

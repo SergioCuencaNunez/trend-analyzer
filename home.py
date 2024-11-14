@@ -12,7 +12,7 @@ layout = dbc.Container(
                                 "key": "1",
                                 "src": "assets/home/1.png",
                                 "header": "Welcome to TrendAnalyzer",
-                                "caption": "Analyze stock trends with forecasting models such as ARIMA-GARCH, Prophet, and LSTM models, offering comprehensive insights into market dynamics and helping you stay ahead of the curve.",
+                                "caption": "Analyze stock trends with forecasting models such as XGBoost and Prophet models, offering comprehensive insights into market dynamics and helping you stay ahead of the curve.",
                             },
                             {
                                 "key": "2",

@@ -4,7 +4,7 @@ import dash_bootstrap_components as dbc
 layout = dbc.Container(
     [
         html.H1("About TrendAnalyzer", className='fade-in-text', style={'text-align': 'center', 'margin-top': '40px'}),
-        html.P("TrendAnalyzer is a powerful tool designed to help you analyze and forecast stock prices using cutting-edge models like ARIMA-GARCH, Prophet, and LSTM. Our mission is to provide accurate and reliable stock price predictions to help you make informed investment decisions.", className='fade-in-text', style={'text-align': 'center'}),
+        html.P("TrendAnalyzer is a powerful tool designed to help you analyze and forecast stock prices using cutting-edge models like XGBoost and Prophet. Our mission is to provide accurate and reliable stock price predictions to help you make informed investment decisions.", className='fade-in-text', style={'text-align': 'center'}),
         
         html.P("TrendAnalyzer uses stock time series data from Yahoo Finance and applies advanced statistical and machine learning models to make forecasts and provide actionable insights. This process involves data collection, preprocessing, model training, and prediction. The result is a set of accurate and reliable forecasts that can guide your investment strategies in the stock market.", className='fade-in-text', style={'text-align': 'center', 'margin-top': '20px'}),
         

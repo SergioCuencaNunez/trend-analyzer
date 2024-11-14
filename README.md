@@ -4,11 +4,11 @@
 
 ## Overview
 
-Trend Analyzer is a web application built with Flask and Dash, designed to analyze, visualize and forecast financial trends using various models such as ARIMA-GARCH, Prophet and LSTM Neural Networks. The app provides interactive graphs and insights based on the provided financial data.
+Trend Analyzer is a web application built with Flask and Dash, designed to analyze, visualize and forecast financial trends using various models such as XGBoost and Prophet models. The app provides interactive graphs and insights based on the provided financial data.
 
 ## Features
 
-- **Financial Trend Analysis**: Utilizes ARIMA-GARCH, Prophet and LSTM models.
+- **Financial Trend Analysis**: Utilizes XGBoost and Prophet models.
 - **Interactive Graphs**: Built with Dash and Plotly for dynamic data visualization.
 - **User-Friendly Interface**: Easy-to-use interface for analyzing and forecasting financial data.
 
