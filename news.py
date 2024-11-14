@@ -34,7 +34,59 @@ def get_stock_ratings(ticker, limit=10):
     stock = finvizfinance(ticker)
     ratings = stock.ticker_outer_ratings().head(limit)  # Display only top 10 ratings initially
     ratings['Date'] = pd.to_datetime(ratings['Date']).dt.strftime('%b-%d-%y')  # Formatting date to 'Nov-04-24'
+    
+    # Rename columns to custom headers
+    ratings.columns = ["Date", "Action", "Analyst", "Rating Change", "Price Target Change"]
+    
     return ratings
+
+# Function to create the styled ratings table
+def display_ratings_table(ratings_df):
+    table_rows = []
+
+    for _, row in ratings_df.iterrows():
+        # Determine text background style for "Action"
+        action_style = {
+            'display': 'inline-block',  # Limit background color to text only
+            'padding': '2px 4px',  # Small padding around text
+            'border-radius': '4px'  # Rounded corners for the background
+        }
+
+        # Apply color based on "Action"
+        if row['Action'] == 'Downgrade':
+            action_style['background-color'] = 'rgba(255, 0, 0, 0.2)'  # Light red background
+            color = 'red'
+        elif row['Action'] == 'Upgrade':
+            action_style['background-color'] = 'rgba(0, 128, 0, 0.2)'  # Light green background
+            color = 'green'
+        else:
+            action_style['background-color'] = 'transparent'  # No background for neutral actions
+            color = 'black'  # Default text color
+
+        # Append each row with conditional styling
+        table_rows.append(
+            html.Tr([
+                html.Td(row['Date']),
+                html.Td(html.Span(row['Action'], style=action_style)),  # Styled background for Action only
+                html.Td(row['Analyst'], style={'color': color}),         # Text color for Analyst
+                html.Td(row['Rating Change'], style={'color': color}),   # Text color for Rating Change
+                html.Td(row['Price Target Change'], style={'color': color})  # Text color for Price Target Change
+            ])
+        )
+
+    # Construct the table with custom headers and rows
+    table = dbc.Table([
+        html.Thead(html.Tr([
+            html.Th("Date"),
+            html.Th("Action"),
+            html.Th("Analyst"),
+            html.Th("Rating Change"),
+            html.Th("Price Target Change")
+        ])),
+        html.Tbody(table_rows)
+    ], bordered=True, striped=True, hover=True, responsive=True, className='fade-in-element')
+
+    return table
 
 # Function to get news
 def get_stock_news(ticker):
@@ -422,6 +474,7 @@ def update_ratings_table(load_more_ratings_clicks, ticker):
     # Show all ratings if the button is clicked, else limit to 10
     ratings_limit = None if load_more_ratings_clicks else 10
     ratings_df = get_stock_ratings(ticker, limit=ratings_limit)
-    ratings_table = dbc.Table.from_dataframe(ratings_df, striped=True, bordered=True, hover=True, responsive=True, className='fade-in-element')
     
-    return ratings_table
+    # Use the display_ratings_table function to create the styled table
+    return display_ratings_table(ratings_df)
+
