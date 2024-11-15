@@ -9,21 +9,32 @@ import pandas as pd
 from app_instance import app
 
 # Function to fetch the logo of the news source
+import requests
+from bs4 import BeautifulSoup
+
 def fetch_news_logo(news_link):
     try:
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }
+        
+        # Check if the domain is Investopedia
+        if "investopedia.com" in news_link:
+            return "https://upload.wikimedia.org/wikipedia/commons/thumb/3/37/Investopedia_Logo.svg/1150px-Investopedia_Logo.svg.png?20190418033219"
+
+        # Fetch the page content for other domains
         response = requests.get(news_link, headers=headers)
         response.raise_for_status()
         soup = BeautifulSoup(response.content, 'html.parser')
         
+        # General logic to find an image
         for img_tag in soup.find_all('img'):
             src = img_tag.get('src', '')
             alt = img_tag.get('alt', '')
             if "https://s.yimg.com/ny/api/res" in src and alt:  
                 return src
-        
+
+        # Default logo if none is found
         return "default_logo.png"
     except Exception as e:
         print(f"Error fetching logo: {e}")
@@ -105,11 +116,9 @@ def display_ratings_table(ratings_df):
 def get_stock_news(ticker):
     stock = finvizfinance(ticker)
     news_df = stock.ticker_news()
-    today = datetime.today().date()
-    news_df['Date'] = pd.to_datetime(news_df['Date']).dt.date
-    filtered_news = news_df[news_df['Date'] == today]
-    total_news = len(filtered_news)  # Get the total count of news articles for the day
-    return filtered_news, total_news
+    news_df['Date'] = pd.to_datetime(news_df['Date']).dt.strftime('%b-%d-%Y')  # Format date for display
+    total_news = len(news_df)  # Get the total count of news articles
+    return news_df, total_news
 
 # Function to get stock performance data
 def get_stock_performance_data(ticker):
@@ -332,7 +341,18 @@ def generate_news_card(news_item):
                     f"Source: {news_item['Source']}",
                     style={
                         'font-size': '14px',
-                        'color': '#555'
+                        'color': '#555',
+                        'margin': '0',
+                        'padding-bottom': '5px'
+                    }
+                ),
+                html.P(
+                    f"Date: {news_item['Date']}",
+                    style={
+                        'font-size': '12px',
+                        'color': '#888',
+                        'margin': '0',
+                        'padding-bottom': '10px'
                     }
                 ),
                 dcc.Link(
@@ -341,7 +361,9 @@ def generate_news_card(news_item):
                     target="_blank",
                     style={
                         'font-size': '14px',
-                        'color': '#007bff'
+                        'color': '#007bff',
+                        'margin': '0',
+                        'padding-bottom': '5px'
                     }
                 )
             ])
@@ -355,58 +377,57 @@ def generate_news_card(news_item):
 
 layout = dbc.Container([
     html.H1("Stock News & Performance", className='fade-in-element', style={'text-align': 'center', 'margin-top': '40px', 'font-family': 'Prata'}),
-    dcc.Store(id='clicks-store', data=1),  # Store for tracking clicks
+    dcc.Store(id='clicks-store', data=1),
     dbc.Row(
-        justify="center",  # Center align the row
+        justify="center",
         children=[
             dbc.Col(
-            html.H4('Select Stock', className='fade-in-element', style={'margin-right': '10px', 'text-align': 'center'}),
-            width="auto",  # Width auto to fit content
-            className="d-flex align-items-center"  # Center vertically
+                html.H4('Select Stock', className='fade-in-element', style={'margin-right': '10px', 'text-align': 'center'}),
+                width="auto",
+                className="d-flex align-items-center"
             ),
             dbc.Col(
-            dcc.Dropdown(
-                id='stock-dropdown',
-                options=[
-                {'label': 'AAPL', 'value': 'AAPL'},
-                {'label': 'AMZN', 'value': 'AMZN'},
-                {'label': 'NVDA', 'value': 'NVDA'},
-                {'label': 'ASML', 'value': 'ASML'},
-                {'label': 'TSLA', 'value': 'TSLA'},
-                {'label': 'GOOGL', 'value': 'GOOGL'},
-                {'label': 'MARA', 'value': 'MARA'},
-                {'label': 'RIOT', 'value': 'RIOT'},
-                {'label': 'MSFT', 'value': 'MSFT'},
-                {'label': 'NFLX', 'value': 'NFLX'},
-                {'label': 'SMCI', 'value': 'SMCI'},
-                {'label': 'MSTR', 'value': 'MSTR'}
-                ],
-                value='AAPL',
-                className='fade-in-element',
-                style={'margin-bottom': '20px'}  # Adjust width as needed
-            ),
-            width=4
+                dcc.Dropdown(
+                    id='stock-dropdown',
+                    options=[
+                        {'label': 'AAPL', 'value': 'AAPL'},
+                        {'label': 'AMZN', 'value': 'AMZN'},
+                        {'label': 'NVDA', 'value': 'NVDA'},
+                        {'label': 'ASML', 'value': 'ASML'},
+                        {'label': 'TSLA', 'value': 'TSLA'},
+                        {'label': 'GOOGL', 'value': 'GOOGL'},
+                        {'label': 'MARA', 'value': 'MARA'},
+                        {'label': 'RIOT', 'value': 'RIOT'},
+                        {'label': 'MSFT', 'value': 'MSFT'},
+                        {'label': 'NFLX', 'value': 'NFLX'},
+                        {'label': 'SMCI', 'value': 'SMCI'},
+                        {'label': 'MSTR', 'value': 'MSTR'}
+                    ],
+                    value='AAPL',
+                    className='fade-in-element',
+                    style={'margin-bottom': '20px'}
+                ),
+                width=4
             )
         ],
-        className="mb-3"  # Margin bottom for spacing
+        className="mb-3"
     ),
-    
     dbc.Row(
         dbc.Col(
-            dcc.Loading(  # This loading only affects news and performance data
+            dcc.Loading(
                 id="loading-full-content",
                 type="default",
                 children=html.Div(
                     id='data-content',
                     children=[
                         dbc.Row([
-                            dbc.Col(html.H3("Relevant Information", id='info-title', className='fade-in-text', style={'text-align': 'center', 'font-family': 'Prata', 'display': 'none'}), width=12, style={'text-align': 'center'}),
+                            dbc.Col(html.H3("Relevant Information", id='info-title', className='fade-in-text', style={'text-align': 'center', 'font-family': 'Prata', 'display': 'none'}), style={'text-align': 'center'}, width=12),
                         ]),
                         dbc.Row([
                             dbc.Col(html.Div(id='performance-table', className='fade-in-element'), width=12)
                         ], style={'margin-bottom': '20px'}),
                         dbc.Row([
-                            dbc.Col(html.H3(f"News - {datetime.today().strftime('%A, %d %b. %Y')}", id='news-title', className='fade-in-text', style={'text-align': 'center', 'font-family': 'Prata', 'display': 'none'}), width=12, style={'text-align': 'center'}),
+                            dbc.Col(html.H3("Latest News", id='news-title', className='fade-in-text', style={'text-align': 'center', 'font-family': 'Prata', 'display': 'none'}), style={'text-align': 'center'}, width=12),
                         ]),
                         dbc.Row(
                             id='news-cards-row', 
@@ -422,7 +443,7 @@ layout = dbc.Container([
                             className="mb-4 justify-content-center"
                         ),
                         dbc.Row([
-                            dbc.Col(html.H3("Ratings", id='ratings-title', className='fade-in-text', style={'text-align': 'center', 'font-family': 'Prata', 'display': 'none'}), width=12, style={'text-align': 'center'}),
+                            dbc.Col(html.H3("Ratings", id='ratings-title', className='fade-in-text', style={'text-align': 'center', 'font-family': 'Prata', 'display': 'none'}), style={'text-align': 'center'}, width=12),
                         ]),
                         dbc.Row([
                             dbc.Col([
@@ -444,7 +465,6 @@ layout = dbc.Container([
         )
     )
 ], fluid=True, className="container")
-
 
 @app.callback(
     Output('clicks-store', 'data'),
