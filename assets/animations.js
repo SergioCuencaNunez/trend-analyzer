@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    const fadeInElements = document.querySelectorAll('.fade-in-text, .fade-in-element, .fade-in-card');
+    const fadeInElements = document.querySelectorAll('.fade-in-text, .fade-in-element, .fade-in-card .fade-in-table');
     fadeInElements.forEach(element => {
         element.style.opacity = 0;
         element.style.transform = 'translateY(20px)';

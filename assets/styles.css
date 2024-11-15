@@ -85,6 +85,15 @@ label[for="model-selection"] {
     100% { opacity: 1; transform: translateY(0); }
 }
 
+.fade-in-table {
+    animation: fadeInTable 2s ease-in-out;
+}
+
+@keyframes fadeInTable {
+    0% { opacity: 0; transform: translateY(20px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
 .radio-group {
     display: flex;
     justify-content: center;
@@ -168,4 +177,26 @@ label[for="model-selection"] {
     border-color: #80bdff;
     outline: 0;
     box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+}
+
+.custom-table {
+    border: 1px solid #ddd;
+    border-radius: 0.25rem;
+    overflow: hidden;
+    border-collapse: collapse;
+}
+
+.custom-table thead th {
+    border-bottom: 1px solid #ddd;
+    padding: 10px;
+    background-color: #f9f9f9;
+}
+
+.custom-table tbody td {
+    padding: 10px; 
+}
+
+.custom-table tr:last-child td {
+    border-bottom: none;
+    padding-bottom: 0;
 }
