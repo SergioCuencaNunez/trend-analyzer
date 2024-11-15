@@ -48,7 +48,7 @@ def display_ratings_table(ratings_df):
         action_style = {
             'display': 'inline-block',
             'padding': '2px 4px',
-            'border-radius': '4px'
+            'border-radius': '5px'
         }
 
         if row['Action'] == 'Downgrade':
@@ -65,24 +65,37 @@ def display_ratings_table(ratings_df):
             html.Tr([
                 html.Td(row['Date']),
                 html.Td(html.Span(row['Action'], style=action_style)),
-                html.Td(row['Analyst'], style={'color': color}),         
-                html.Td(row['Rating Change'], style={'color': color}),   
-                html.Td(row['Price Target Change'], style={'color': color}) 
+                html.Td(row['Analyst'], style={'color': color}),
+                html.Td(row['Rating Change'], style={'color': color}),
+                html.Td(row['Price Target Change'], style={'color': color})
             ])
         )
 
+    # Create the table without bordered=True and apply custom CSS for a unified border
     table = dbc.Table([
-        html.Thead(html.Tr([
-            html.Th("Date"),
-            html.Th("Action"),
-            html.Th("Analyst"),
-            html.Th("Rating Change"),
-            html.Th("Price Target Change")
-        ])),
+        html.Thead(
+            html.Tr([
+                html.Th("Date"),
+                html.Th("Action"),
+                html.Th("Analyst"),
+                html.Th("Rating Change"),
+                html.Th("Price Target Change")
+            ])
+        ),
         html.Tbody(table_rows)
-    ], bordered=True, striped=True, hover=True, responsive=True, className='fade-in-element')
+    ], striped=True, hover=True, responsive=True, className='custom-table')
 
-    return table
+    # Wrap in a card for the outer rounded border and fade-in effect
+    table_card = dbc.Card(
+        table,
+        className='fade-in-table',  # Apply fade-in effect to the outer card for border and content
+        style={
+            'border-radius': '8px',  # Outer rounded corners
+            'overflow': 'hidden'  # Ensures rounded corners are applied
+        }
+    )
+
+    return table_card
 
 # Function to get news
 def get_stock_news(ticker):
@@ -396,7 +409,7 @@ layout = dbc.Container([
                         ),
                         dbc.Row(
                             dbc.Col(
-                                dbc.Button("Load More News", id='load-more-button', color="primary", className='fade-in-card'),
+                                dbc.Button("Load More News", id='load-more-button', color="primary"),
                                 width="auto",
                                 style={'display': 'flex', 'justify-content': 'center'}
                             ),
@@ -407,10 +420,10 @@ layout = dbc.Container([
                         ]),
                         dbc.Row([
                             dbc.Col([
-                                html.Div(id='ratings-table', className='fade-in-element'),
+                                html.Div(id='ratings-table', className='fade-in-table'),
                                 dbc.Row(
                                     dbc.Col(
-                                        dbc.Button("Load More Ratings", id='load-more-ratings-button', color="primary", className='fade-in-card'),
+                                        dbc.Button("Load More Ratings", id='load-more-ratings-button', color="primary"),
                                         width="auto"  # The button will only take up the necessary space
                                     ),
                                     justify='center',  # Center the button within the row
@@ -446,31 +459,35 @@ def update_click_count(selected_stock, n_clicks, clicks_data):
      Output('news-cards-row', 'children'),
      Output('info-title', 'style'),
      Output('news-title', 'style'),
-     Output('ratings-title', 'style')],
-    [Input('stock-dropdown', 'value'), Input('clicks-store', 'data')]
+     Output('ratings-table', 'children'),
+     Output('ratings-title', 'style'),
+     Output('load-more-ratings-button', 'n_clicks')],  # Reset the load-more-ratings button clicks
+    [Input('stock-dropdown', 'value'), Input('clicks-store', 'data'), Input('load-more-ratings-button', 'n_clicks')],
+    [State('load-more-ratings-button', 'n_clicks')]  # Track previous state of clicks
 )
-def update_news_and_performance(ticker, clicks_data):
+def update_news_performance_and_ratings(ticker, clicks_data, load_more_ratings_clicks, prev_ratings_clicks):
+    # Check if stock selection changed by comparing with callback context
+    if callback_context.triggered[0]['prop_id'] == 'stock-dropdown.value':
+        # Reset ratings limit to 10 and clear load-more button clicks
+        ratings_limit = 10
+        load_more_ratings_clicks = 0
+    else:
+        # Use expanded limit if "Load More Ratings" button was clicked
+        ratings_limit = None if load_more_ratings_clicks else 10
+
+    # Get news data and limit based on clicks
     news_df = get_stock_news(ticker)
     news_limit = 4 * clicks_data  # Display news based on click count
-    
-    # Generate News Cards
     news_cards = [dbc.Col(generate_news_card(news), width=6) for _, news in news_df.head(news_limit).iterrows()]
-    
-    # Performance Table
+
+    # Get performance data
     performance_table = display_performance_data(get_stock_performance_data(ticker))
     
-    show_style = {'display': 'block'}
-    
-    return performance_table, news_cards, show_style, show_style, show_style
-@app.callback(
-    Output('ratings-table', 'children'),
-    [Input('load-more-ratings-button', 'n_clicks')],
-    [State('stock-dropdown', 'value')]
-)
-def update_ratings_table(load_more_ratings_clicks, ticker):
-    # Show all ratings if the button is clicked, else limit to 10
-    ratings_limit = None if load_more_ratings_clicks else 10
+    # Get ratings data with the appropriate limit
     ratings_df = get_stock_ratings(ticker, limit=ratings_limit)
-    
-    # Use the display_ratings_table function to create the styled table
-    return display_ratings_table(ratings_df)
+    ratings_table = display_ratings_table(ratings_df)
+
+    # Set styles to show all elements
+    show_style = {'display': 'block'}
+
+    return performance_table, news_cards, show_style, show_style, ratings_table, show_style, load_more_ratings_clicks
