@@ -45,36 +45,32 @@ def display_ratings_table(ratings_df):
     table_rows = []
 
     for _, row in ratings_df.iterrows():
-        # Determine text background style for "Action"
         action_style = {
-            'display': 'inline-block',  # Limit background color to text only
-            'padding': '2px 4px',  # Small padding around text
-            'border-radius': '4px'  # Rounded corners for the background
+            'display': 'inline-block',
+            'padding': '2px 4px',
+            'border-radius': '4px'
         }
 
-        # Apply color based on "Action"
         if row['Action'] == 'Downgrade':
-            action_style['background-color'] = 'rgba(255, 0, 0, 0.2)'  # Light red background
+            action_style['background-color'] = 'rgba(255, 0, 0, 0.2)'
             color = 'red'
         elif row['Action'] == 'Upgrade':
-            action_style['background-color'] = 'rgba(0, 128, 0, 0.2)'  # Light green background
+            action_style['background-color'] = 'rgba(0, 128, 0, 0.2)'
             color = 'green'
         else:
-            action_style['background-color'] = 'transparent'  # No background for neutral actions
-            color = 'black'  # Default text color
+            action_style['background-color'] = 'transparent'
+            color = 'black'
 
-        # Append each row with conditional styling
         table_rows.append(
             html.Tr([
                 html.Td(row['Date']),
-                html.Td(html.Span(row['Action'], style=action_style)),  # Styled background for Action only
-                html.Td(row['Analyst'], style={'color': color}),         # Text color for Analyst
-                html.Td(row['Rating Change'], style={'color': color}),   # Text color for Rating Change
-                html.Td(row['Price Target Change'], style={'color': color})  # Text color for Price Target Change
+                html.Td(html.Span(row['Action'], style=action_style)),
+                html.Td(row['Analyst'], style={'color': color}),         
+                html.Td(row['Rating Change'], style={'color': color}),   
+                html.Td(row['Price Target Change'], style={'color': color}) 
             ])
         )
 
-    # Construct the table with custom headers and rows
     table = dbc.Table([
         html.Thead(html.Tr([
             html.Th("Date"),
@@ -449,7 +445,8 @@ def update_click_count(selected_stock, n_clicks, clicks_data):
     [Output('performance-table', 'children'),
      Output('news-cards-row', 'children'),
      Output('info-title', 'style'),
-     Output('news-title', 'style')],
+     Output('news-title', 'style'),
+     Output('ratings-title', 'style')],
     [Input('stock-dropdown', 'value'), Input('clicks-store', 'data')]
 )
 def update_news_and_performance(ticker, clicks_data):
@@ -464,7 +461,7 @@ def update_news_and_performance(ticker, clicks_data):
     
     show_style = {'display': 'block'}
     
-    return performance_table, news_cards, show_style, show_style
+    return performance_table, news_cards, show_style, show_style, show_style
 @app.callback(
     Output('ratings-table', 'children'),
     [Input('load-more-ratings-button', 'n_clicks')],
@@ -477,4 +474,3 @@ def update_ratings_table(load_more_ratings_clicks, ticker):
     
     # Use the display_ratings_table function to create the styled table
     return display_ratings_table(ratings_df)
-
