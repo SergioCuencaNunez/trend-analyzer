@@ -32,13 +32,17 @@ def fetch_news_logo(news_link):
 # Function to get ratings
 def get_stock_ratings(ticker, limit=10):
     stock = finvizfinance(ticker)
-    ratings = stock.ticker_outer_ratings().head(limit)  # Display only top 10 ratings initially
-    ratings['Date'] = pd.to_datetime(ratings['Date']).dt.strftime('%b-%d-%y')  # Formatting date to 'Nov-04-24'
+    ratings = stock.ticker_outer_ratings()
+    
+    # Keep track of total ratings count
+    total_ratings = len(ratings)
+    limited_ratings = ratings.head(limit)
+    limited_ratings['Date'] = pd.to_datetime(limited_ratings['Date']).dt.strftime('%b-%d-%y')  # Formatting date to 'Nov-04-24'
     
     # Rename columns to custom headers
-    ratings.columns = ["Date", "Action", "Analyst", "Rating Change", "Price Target Change"]
+    limited_ratings.columns = ["Date", "Action", "Analyst", "Rating Change", "Price Target Change"]
     
-    return ratings
+    return limited_ratings, total_ratings
 
 # Function to create the styled ratings table
 def display_ratings_table(ratings_df):
@@ -103,7 +107,9 @@ def get_stock_news(ticker):
     news_df = stock.ticker_news()
     today = datetime.today().date()
     news_df['Date'] = pd.to_datetime(news_df['Date']).dt.date
-    return news_df[news_df['Date'] == today]
+    filtered_news = news_df[news_df['Date'] == today]
+    total_news = len(filtered_news)  # Get the total count of news articles for the day
+    return filtered_news, total_news
 
 # Function to get stock performance data
 def get_stock_performance_data(ticker):
@@ -409,9 +415,9 @@ layout = dbc.Container([
                         ),
                         dbc.Row(
                             dbc.Col(
-                                dbc.Button("Load More News", id='load-more-button', color="primary"),
+                                dbc.Button("Load More News", id='load-more-button', color="primary", style={'display': 'block'}),
                                 width="auto",
-                                style={'display': 'flex', 'justify-content': 'center'}
+                                style={'display': 'flex', 'justify-content': 'center', 'margin-top': '10px'}
                             ),
                             className="mb-4 justify-content-center"
                         ),
@@ -423,11 +429,11 @@ layout = dbc.Container([
                                 html.Div(id='ratings-table', className='fade-in-table'),
                                 dbc.Row(
                                     dbc.Col(
-                                        dbc.Button("Load More Ratings", id='load-more-ratings-button', color="primary"),
-                                        width="auto"  # The button will only take up the necessary space
+                                        dbc.Button("Load More Ratings", id='load-more-ratings-button', color="primary", style={'display': 'block'}),
+                                        width="auto"
                                     ),
-                                    justify='center',  # Center the button within the row
-                                    style={'margin-top': '10px'}  # Add some space between the table and the button
+                                    justify='center',
+                                    style={'margin-top': '10px'}
                                 )
                             ], width=12)
                         ])
@@ -455,39 +461,78 @@ def update_click_count(selected_stock, n_clicks, clicks_data):
 
 # Main callback to update content based on click count
 @app.callback(
-    [Output('performance-table', 'children'),
-     Output('news-cards-row', 'children'),
-     Output('info-title', 'style'),
-     Output('news-title', 'style'),
-     Output('ratings-table', 'children'),
-     Output('ratings-title', 'style'),
-     Output('load-more-ratings-button', 'n_clicks')],  # Reset the load-more-ratings button clicks
-    [Input('stock-dropdown', 'value'), Input('clicks-store', 'data'), Input('load-more-ratings-button', 'n_clicks')],
-    [State('load-more-ratings-button', 'n_clicks')]  # Track previous state of clicks
+    [
+        Output('performance-table', 'children'),
+        Output('news-cards-row', 'children'),  # Single Output for news-cards-row
+        Output('info-title', 'style'),
+        Output('news-title', 'style'),
+        Output('ratings-table', 'children'),
+        Output('ratings-title', 'style'),
+        Output('load-more-ratings-button', 'n_clicks'),
+        Output('load-more-ratings-button', 'style'),  # Ratings button visibility
+        Output('load-more-button', 'style')  # News button visibility
+    ],
+    [
+        Input('stock-dropdown', 'value'),
+        Input('clicks-store', 'data'),
+        Input('load-more-ratings-button', 'n_clicks'),
+        Input('load-more-button', 'n_clicks')
+    ],
+    [
+        State('load-more-ratings-button', 'n_clicks'),
+        State('clicks-store', 'data')
+    ]
 )
-def update_news_performance_and_ratings(ticker, clicks_data, load_more_ratings_clicks, prev_ratings_clicks):
+def update_news_performance_and_ratings(
+    ticker, clicks_data, load_more_ratings_clicks, load_more_news_clicks, prev_ratings_clicks, prev_clicks_store
+):
     # Check if stock selection changed by comparing with callback context
     if callback_context.triggered[0]['prop_id'] == 'stock-dropdown.value':
-        # Reset ratings limit to 10 and clear load-more button clicks
         ratings_limit = 10
         load_more_ratings_clicks = 0
     else:
-        # Use expanded limit if "Load More Ratings" button was clicked
         ratings_limit = None if load_more_ratings_clicks else 10
 
     # Get news data and limit based on clicks
-    news_df = get_stock_news(ticker)
+    news_df, total_news = get_stock_news(ticker)
     news_limit = 4 * clicks_data  # Display news based on click count
-    news_cards = [dbc.Col(generate_news_card(news), width=6) for _, news in news_df.head(news_limit).iterrows()]
+    displayed_news = news_df.head(news_limit)
+    news_cards = [dbc.Col(generate_news_card(news), width=6) for _, news in displayed_news.iterrows()]
+
+    # Add message if no more news
+    if len(displayed_news) >= total_news:
+        news_cards.append(
+            dbc.Col(
+                html.P(f"No More News for {datetime.today().strftime('%A, %d %b. %Y')}",
+                       style={'text-align': 'center'}),
+                width=12
+            )
+        )
+        news_button_style = {'display': 'none'}  # Hide the button
+    else:
+        news_button_style = {'display': 'block'}  # Show the button
 
     # Get performance data
     performance_table = display_performance_data(get_stock_performance_data(ticker))
-    
+
     # Get ratings data with the appropriate limit
-    ratings_df = get_stock_ratings(ticker, limit=ratings_limit)
+    ratings_df, total_ratings = get_stock_ratings(ticker, limit=ratings_limit)
     ratings_table = display_ratings_table(ratings_df)
+
+    # Determine if the ratings button should be shown
+    ratings_button_style = {'display': 'block'} if len(ratings_df) < total_ratings else {'display': 'none'}
 
     # Set styles to show all elements
     show_style = {'display': 'block'}
 
-    return performance_table, news_cards, show_style, show_style, ratings_table, show_style, load_more_ratings_clicks
+    return (
+        performance_table, 
+        news_cards,  # Combined logic for news-cards-row
+        show_style, 
+        show_style, 
+        ratings_table, 
+        show_style, 
+        load_more_ratings_clicks, 
+        ratings_button_style, 
+        news_button_style
+    )
