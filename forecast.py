@@ -79,8 +79,8 @@ layout = dbc.Container([
                 id="loading-graph",
                 type="default",
                 children=[
-                    dcc.Graph(id='price-graph', className='fade-in-element', style={'margin-top': '30px', 'margin-bottom': '30px', 'height': '500px', 'backgroundColor': 'white', 'border': '1px solid #CCCCCC', 'border-radius': '10px', 'padding': '10px 0px 510px 0px'}),
-                    dcc.Graph(id='forecast-graph', className='fade-in-element', style={'margin-top': '30px', 'height': '500px', 'backgroundColor': 'white', 'border': '1px solid #CCCCCC', 'border-radius': '10px', 'padding': '10px 0px 510px 0px'}),
+                    dcc.Graph(id='price-graph', className='fade-in-graph', style={'margin-top': '30px', 'margin-bottom': '30px', 'height': '500px', 'backgroundColor': 'white', 'border': '1px solid #CCCCCC', 'border-radius': '10px', 'padding': '10px 0px 510px 0px'}),
+                    dcc.Graph(id='forecast-graph', className='fade-in-graph', style={'margin-top': '30px', 'height': '500px', 'backgroundColor': 'white', 'border': '1px solid #CCCCCC', 'border-radius': '10px', 'padding': '10px 0px 510px 0px'}),
                 ]
             ),
             html.Div(id='recommendations-container', className='fade-in-element', style={'margin-top': '20px', 'text-align': 'center', 'font-family': 'Hanken Grotesk'})

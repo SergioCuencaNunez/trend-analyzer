@@ -94,6 +94,15 @@ label[for="model-selection"] {
     100% { opacity: 1; transform: translateY(0); }
 }
 
+.fade-in-graph {
+    animation: fadeInGraph 2s ease-in-out;
+}
+
+@keyframes fadeInGraph {
+    0% { opacity: 0; transform: translateY(20px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
 .radio-group {
     display: flex;
     justify-content: center;
