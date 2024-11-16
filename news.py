@@ -11,12 +11,10 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 
-# Dictionary to store cached logos
 logo_cache = {}
 
 # Function to fetch the logo of the news source with caching
 def fetch_news_logo(news_link):
-    # Check if the logo for this link is already cached
     if news_link in logo_cache:
         return logo_cache[news_link]
     
@@ -25,39 +23,32 @@ def fetch_news_logo(news_link):
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         }
         
-        # Check if the domain is Investopedia
         if "investopedia.com" in news_link:
             logo_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/3/37/Investopedia_Logo.svg/1150px-Investopedia_Logo.svg.png?20190418033219"
-            logo_cache[news_link] = logo_url  # Cache the logo
+            logo_cache[news_link] = logo_url
             return logo_url
 
-        # Fetch the page content for other domains
         response = requests.get(news_link, headers=headers)
         response.raise_for_status()
         soup = BeautifulSoup(response.content, 'html.parser')
         
-        # General logic to find images
         for img_tag in soup.find_all('img'):
             src = img_tag.get('src', '')
             alt = img_tag.get('alt', '')
 
-            # Specific condition for Yahoo Finance
             if "https://s.yimg.com/ny/api/res" in src and alt:
                 logo_url = src
-                logo_cache[news_link] = logo_url  # Cache the logo
+                logo_cache[news_link] = logo_url
                 return logo_url
             
-            # Check for 'logo' in any attribute
             attributes = img_tag.attrs
             if any("logo" in str(value).lower() for value in attributes.values()):
-                # Convert relative URL to absolute
                 logo_url = urljoin(news_link, src)
-                logo_cache[news_link] = logo_url  # Cache the logo
+                logo_cache[news_link] = logo_url
                 return logo_url
         
-        # Default logo if none is found
         logo_url = "default_logo.png"
-        logo_cache[news_link] = logo_url  # Cache the default logo
+        logo_cache[news_link] = logo_url
         return logo_url
 
     except Exception as e:
@@ -68,15 +59,15 @@ def fetch_news_logo(news_link):
 def get_stock_ratings(ticker, limit=10):
     stock = finvizfinance(ticker)
     ratings = stock.ticker_outer_ratings()
-    
-    # Keep track of total ratings count
+
     total_ratings = len(ratings)
-    limited_ratings = ratings.head(limit)
-    limited_ratings['Date'] = pd.to_datetime(limited_ratings['Date']).dt.strftime('%b-%d-%y')  # Formatting date to 'Nov-04-24'
-    
-    # Rename columns to custom headers
+
+    limited_ratings = ratings.iloc[:limit].copy()
+
+    limited_ratings['Date'] = pd.to_datetime(limited_ratings['Date'], errors='coerce').dt.strftime('%b-%d-%Y')
+
     limited_ratings.columns = ["Date", "Action", "Analyst", "Rating Change", "Price Target Change"]
-    
+
     return limited_ratings, total_ratings
 
 # Function to create the styled ratings table
