@@ -7,12 +7,19 @@ from dash import Input, Output, State
 from datetime import datetime
 import pandas as pd
 from app_instance import app
-
-# Function to fetch the logo of the news source
 import requests
 from bs4 import BeautifulSoup
+from urllib.parse import urljoin
 
+# Dictionary to store cached logos
+logo_cache = {}
+
+# Function to fetch the logo of the news source with caching
 def fetch_news_logo(news_link):
+    # Check if the logo for this link is already cached
+    if news_link in logo_cache:
+        return logo_cache[news_link]
+    
     try:
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
@@ -20,22 +27,39 @@ def fetch_news_logo(news_link):
         
         # Check if the domain is Investopedia
         if "investopedia.com" in news_link:
-            return "https://upload.wikimedia.org/wikipedia/commons/thumb/3/37/Investopedia_Logo.svg/1150px-Investopedia_Logo.svg.png?20190418033219"
+            logo_url = "https://upload.wikimedia.org/wikipedia/commons/thumb/3/37/Investopedia_Logo.svg/1150px-Investopedia_Logo.svg.png?20190418033219"
+            logo_cache[news_link] = logo_url  # Cache the logo
+            return logo_url
 
         # Fetch the page content for other domains
         response = requests.get(news_link, headers=headers)
         response.raise_for_status()
         soup = BeautifulSoup(response.content, 'html.parser')
         
-        # General logic to find an image
+        # General logic to find images
         for img_tag in soup.find_all('img'):
             src = img_tag.get('src', '')
             alt = img_tag.get('alt', '')
-            if "https://s.yimg.com/ny/api/res" in src and alt:  
-                return src
 
+            # Specific condition for Yahoo Finance
+            if "https://s.yimg.com/ny/api/res" in src and alt:
+                logo_url = src
+                logo_cache[news_link] = logo_url  # Cache the logo
+                return logo_url
+            
+            # Check for 'logo' in any attribute
+            attributes = img_tag.attrs
+            if any("logo" in str(value).lower() for value in attributes.values()):
+                # Convert relative URL to absolute
+                logo_url = urljoin(news_link, src)
+                logo_cache[news_link] = logo_url  # Cache the logo
+                return logo_url
+        
         # Default logo if none is found
-        return "default_logo.png"
+        logo_url = "default_logo.png"
+        logo_cache[news_link] = logo_url  # Cache the default logo
+        return logo_url
+
     except Exception as e:
         print(f"Error fetching logo: {e}")
         return "default_logo.png"
@@ -297,38 +321,48 @@ def display_performance_data(performance_data):
 # Function to generate news card with logos
 def generate_news_card(news_item):
     logo_url = fetch_news_logo(news_item['Link'])
+    
+    # Define the main components of the card header row
+    header_components = [
+        dbc.Col(
+            html.H4(
+                news_item['Title'],
+                style={
+                    'font-size': '16px',
+                    'font-weight': 'bold',
+                    'margin': '0'
+                }
+            ),
+            width=True
+        )
+    ]
+    
+    # Add the logo only if it is not the default logo
+    if logo_url != "default_logo.png":
+        header_components.append(
+            dbc.Col(
+                dbc.CardImg(
+                    src=logo_url,
+                    style={
+                        'width': 'auto',
+                        'max-width': '140px',
+                        'max-height': '30px',
+                        'padding-left': '10px',
+                        'object-fit': 'contain',
+                        'overflow': 'visible'
+                    }
+                ),
+                width="auto",
+                className="d-flex align-items-center justify-content-end"
+            )
+        )
+    
+    # Construct the card with conditionally added logo
     return dbc.Card(
         [
             dbc.CardHeader(
                 dbc.Row(
-                    [
-                        dbc.Col(
-                            html.H4(
-                                news_item['Title'],
-                                style={
-                                    'font-size': '16px',
-                                    'font-weight': 'bold',
-                                    'margin': '0'
-                                }
-                            ),
-                            width=True
-                        ),
-                        dbc.Col(
-                            dbc.CardImg(
-                                src=logo_url,
-                                style={
-                                    'width': 'auto',
-                                    'max-width': '140px',
-                                    'max-height': '30px',
-                                    'padding-left': '10px',
-                                    'object-fit': 'contain',
-                                    'overflow': 'visible'
-                                }
-                            ),
-                            width="auto",
-                            className="d-flex align-items-center justify-content-end"
-                        )
-                    ],
+                    header_components,
                     align="center",
                     className="g-0"
                 ),
@@ -336,37 +370,45 @@ def generate_news_card(news_item):
                     'padding': '10px 20px'
                 }
             ),
-            dbc.CardBody([
-                html.P(
-                    f"Source: {news_item['Source']}",
-                    style={
-                        'font-size': '14px',
-                        'color': '#555',
-                        'margin': '0',
-                        'padding-bottom': '5px'
-                    }
-                ),
-                html.P(
-                    f"Date: {news_item['Date']}",
-                    style={
-                        'font-size': '12px',
-                        'color': '#888',
-                        'margin': '0',
-                        'padding-bottom': '10px'
-                    }
-                ),
-                dcc.Link(
-                    "Link to Full Story",
-                    href=news_item['Link'],
-                    target="_blank",
-                    style={
-                        'font-size': '14px',
-                        'color': '#007bff',
-                        'margin': '0',
-                        'padding-bottom': '5px'
-                    }
-                )
-            ])
+            dbc.CardBody(
+                [
+                    html.P(
+                        f"Source: {news_item['Source']}",
+                        style={
+                            'font-size': '14px',
+                            'color': '#555',
+                            'margin': '0',
+                            'padding-bottom': '5px'
+                        }
+                    ),
+                    html.P(
+                        f"Date: {news_item['Date']}",
+                        style={
+                            'font-size': '12px',
+                            'color': '#888',
+                            'margin': '0',
+                            'padding-bottom': '12px'
+                        }
+                    ),
+                    dcc.Link(
+                        "Link to Full Story",
+                        href=news_item['Link'],
+                        target="_blank",
+                        style={
+                            'font-size': '14px',
+                            'color': '#007bff',
+                            'margin': '0',
+                            'padding-bottom': '5px'
+                        }
+                    )
+                ],
+                style={
+                    'display': 'flex',
+                    'flex-direction': 'column',
+                    'justify-content': 'center',
+                    'height': '100%'
+                }
+            )
         ],
         style={
             'position': 'relative',

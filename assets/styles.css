@@ -106,17 +106,16 @@ label[for="model-selection"] {
 .radio-group {
     display: flex;
     justify-content: center;
-    gap: 120px; /* Add more space between each radio item */
+    gap: 120px;
     font-family: 'Hanken Grotesk', sans-serif;
-    font-size: 18px; /* Increase font size for elegance */
-    color: #050A30; /* Adjust color for elegance */
+    font-size: 18px;
+    color: #050A30;
 }
 
 .radio-group input {
-    margin-right: 15px; /* Space between radio button and label */
+    margin-right: 15px;
 }
 
-/* Adjust styles for the carousel */
 .carousel-item img {
     width: 100%;
     height: 81vh;
@@ -125,41 +124,47 @@ label[for="model-selection"] {
 
 .carousel-caption {
     position: absolute;
-    top: 40%;
+    top: 50%;
     left: 10%;
     transform: translateY(-50%);
     color: #000;
     text-align: left;
-    background: rgba(255, 255, 255, 0.8);
-    padding: 20px;
+    background: rgba(255, 255, 255, 0.85);
+    padding: 20px 30px;
     border-radius: 10px;
-    width: 42%;
-    height: 35%; /* Adjusted to auto */
+    width: 38%;
+    height: 30%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
 }
-    
+
+.carousel-caption h5 {
+    font-size: 2.2rem;
+    font-family: 'Prata', serif;
+    margin-bottom: 5px;
+}
+
+.carousel-caption p {
+    margin: 5px 0 0 0;
+    font-size: 1rem;
+    line-height: 1.4;
+}
+ 
 .carousel.carousel-fade .carousel-item {
     display: block;
     opacity: 0;
-    transition: opacity 0.5s ease-in-out; /* Quick fade-out */
+    transition: opacity 0.5s ease-in-out;
 }
 
 .carousel.carousel-fade .carousel-item.active {
     opacity: 1 !important;
-    transition: opacity 1.5s ease-in-out; /* Smooth fade-in */
+    transition: opacity 1.5s ease-in-out;
 }
 
 .container-fluid {
     padding: 0;
-}
-
-.carousel-caption h5 {
-    font-size: 2.5rem; /* Increase font size */
-    font-family: 'Prata', serif;
-    padding: 10px 10px 10px 10px; 
-}
-
-.carousel-caption p {
-    padding: 0px 10px 0px 10px; 
 }
 
 .fade-in-container {
