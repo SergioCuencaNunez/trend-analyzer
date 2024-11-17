@@ -1,5 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
+from urllib.parse import urljoin
 from finvizfinance.quote import finvizfinance
 from dash import dcc, html, callback_context
 import dash_bootstrap_components as dbc
@@ -7,9 +8,6 @@ from dash import Input, Output, State
 from datetime import datetime
 import pandas as pd
 from app_instance import app
-import requests
-from bs4 import BeautifulSoup
-from urllib.parse import urljoin
 
 logo_cache = {}
 
