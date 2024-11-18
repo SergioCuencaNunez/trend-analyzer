@@ -69,6 +69,9 @@ label[for="model-selection"] {
 
 .zoom-in-image {
     animation: zoomIn 1s ease-in-out;
+    width: 90px;
+    height: 90px;
+    object-fit: contain;
 }
 
 @keyframes zoomIn {

@@ -1,8 +1,7 @@
-from app_instance import app, server
+from app_instance import app
 import os
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8080))
-    app.run_server(port = port)
     # app.run_server(debug = True)
-    # app.run_server(host='0.0.0.0', port=port)
+    app.run_server(host='0.0.0.0', port=port)

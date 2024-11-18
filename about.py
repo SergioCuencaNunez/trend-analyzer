@@ -69,22 +69,6 @@ layout = dbc.Container(
                 dbc.Col(
                     dbc.Card(
                         [
-                            dbc.CardImg(src='/assets/about/time-series.png', top=True, className='zoom-in-image', style={'width': '20%', 'padding': '10px 0px 0px 0px'}),
-                            dbc.CardBody(
-                                [
-                                    html.H4("ARIMA-GARCH Model", className="card-title"),
-                                    html.P("The ARIMA-GARCH model combines AutoRegressive Integrated Moving Average (ARIMA) and Generalized AutoRegressive Conditional Heteroskedasticity (GARCH) to capture both linear and volatility patterns in stock prices. This dual approach ensures more accurate and robust forecasts.", className="card-text"),
-                                ]
-                            ),
-                        ],
-                        className='fade-in-card',  # Add this class for animation
-                        style={'text-align': 'center'}
-                    ),
-                    md=4
-                ),
-                dbc.Col(
-                    dbc.Card(
-                        [
                             dbc.CardImg(src='/assets/about/facebook.png', top=True, className='zoom-in-image', style={'width': '20%', 'padding': '10px 0px 0px 0px'}),
                             dbc.CardBody(
                                 [
@@ -96,28 +80,66 @@ layout = dbc.Container(
                         className='fade-in-card',  # Add this class for animation
                         style={'text-align': 'center'}
                     ),
-                    md=4
+                    md=6
                 ),
                 dbc.Col(
                     dbc.Card(
                         [
-                            dbc.CardImg(src='/assets/about/neural-network.png', top=True, className='zoom-in-image', style={'width': '20%', 'padding': '10px 0px 0px 0px'}),
+                            dbc.CardImg(src='/assets/about/boosting.png', top=True, className='zoom-in-image', style={'width': '20%', 'padding': '10px 0px 0px 0px'}),
                             dbc.CardBody(
                                 [
-                                    html.H4("LSTM Model", className="card-title"),
-                                    html.P("Long Short-Term Memory (LSTM) networks are a type of recurrent neural network capable of learning long-term dependencies. LSTM is particularly powerful for time series forecasting as it can remember past data points over long sequences, making it ideal for predicting stock prices based on historical trends.", className="card-text"),
+                                    html.H4("XGBoost Model", className="card-title"),
+                                    html.P("XGBoost uses gradient boosting to deliver fast, accurate, and efficient stock price predictions. It excels in handling complex relationships and interactions within the data. With its ability to process large datasets, and prevent overfitting through regularization techniques, XGBoost ensures robust and reliable forecasting results.", className="card-text"),
                                 ]
                             ),
                         ],
                         className='fade-in-card',  # Add this class for animation
                         style={'text-align': 'center'}
                     ),
-                    md=4
+                    md=6
                 ),
             ],
             style={'margin-top': '40px'}
         ),
-
+        html.H2("News & Performance", className='fade-in-text', style={'text-align': 'center', 'margin-top': '40px'}),
+        dbc.Row(
+            [
+                dbc.Col(
+                    dbc.Card(
+                        [
+                            dbc.CardImg(src='/assets/about/news.png', top=True, className='zoom-in-image', style={'width': '20%', 'padding': '10px 0px 0px 0px'}),
+                            dbc.CardBody(
+                                [
+                                    html.H4("Latest Financial News", className="card-title"),
+                                    html.P(
+                                        "Stay informed with the latest developments in the financial world. Our platform aggregates news from trusted sources, "
+                                        "providing insights into market trends, company earnings, and industry updates. This comprehensive coverage ensures you "
+                                        "never miss important financial events or opportunities.",
+                                        className="card-text"
+                                    ),
+                                    html.Hr(),
+                                    html.H4("Stock Performance Metrics", className="card-title"),
+                                    dbc.Col(
+                                        html.P(
+                                            "Track essential performance indicators such as Price-to-Earnings (P/E) ratios, Return on Investment (ROI), "
+                                            "volatility trends, and profit margins. These metrics allow you to evaluate a stock's valuation, profitability, "
+                                            "and risk level effectively. Our platform enables data-driven decision-making by presenting these metrics alongside "
+                                            " news and analysis. Whether you're monitoring a portfolio or exploring new investment opportunities, you’ll have the tools to succeed.",
+                                            className="card-text"
+                                        ),
+                                        className="d-flex align-items-center"
+                                    ),
+                                ]
+                            ),
+                        ],
+                        className='fade-in-card',
+                        style={'text-align': 'center'}
+                    ),
+                    md=12
+                ),
+            ],
+            style={'margin-top': '40px'}
+        ),
         html.H2("Get in Touch", className='fade-in-text', style={'text-align': 'center', 'margin-top': '40px'}),
         html.P("We'd love to hear from you! Whether you have questions, feedback, or need support, feel free to reach out to us.", className='fade-in-text', style={'text-align': 'center'}),
         dbc.Row(
