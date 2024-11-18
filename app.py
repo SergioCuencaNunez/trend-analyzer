@@ -1,4 +1,4 @@
-from app_instance import app
+from app_instance import app, server
 import os
 
 if __name__ == '__main__':
