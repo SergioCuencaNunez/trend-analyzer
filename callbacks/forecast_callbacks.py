@@ -1,4 +1,4 @@
-from dash import Input, Output, html
+from dash import Input, Output, State, html
 import dash_bootstrap_components as dbc
 import plotly.graph_objs as go
 from helpers.forecast_helpers import calculate_moving_averages, create_price_figure, perform_forecast, calculate_recommendations
@@ -15,14 +15,44 @@ def register_callbacks(app):
         return create_price_figure(data, ma50, ma200, ticker)
 
     @app.callback(
-        [Output('forecast-graph', 'figure'),
-         Output('recommendations-container', 'children')],
-        [Input('index-dropdown', 'value'),
-         Input('model-selection', 'value'),
-         Input('forecast-period-dropdown', 'value'),
-         Input('earnings-percentage-input', 'value')]
+        [
+            Output('forecast-graph', 'figure'),
+            Output('forecast-graph', 'style'),
+            Output('recommendations-container', 'children'),
+            Output('recommendations-container', 'style'),
+            Output('loading-forecast', 'style'), 
+        ],
+        [
+            Input('generate-forecast-btn', 'n_clicks')
+        ],
+        [
+            State('index-dropdown', 'value'),
+            State('model-selection', 'value'),
+            State('forecast-period-dropdown', 'value'),
+            State('earnings-percentage-input', 'value')
+        ]
     )
-    def update_forecast_graph(ticker, model_type, forecast_days, earnings_percentage):
+    def update_forecast_graph(n_clicks, ticker, model_type, forecast_days, earnings_percentage):
+        first_click_style = {
+            'position': 'relative',
+            'min-height': '600px',
+            'z-index': '1'
+        }
+        subsequent_click_style = {
+            'position': 'absolute',
+            'top': 0,
+            'left': 0,
+            'width': '100%',
+            'height': '100%',
+            'display': 'flex',
+            'align-items': 'center',
+            'justify-content': 'center',
+            'z-index': 10,
+        }
+
+        if not n_clicks:
+            return {}, {'display': 'none'}, None, {'display': 'none'}, first_click_style
+
         data = download_data(ticker)
         shapes = []
 
@@ -265,7 +295,17 @@ def register_callbacks(app):
                     'shapes': shapes
                 }
             }
-            
+
+        forecast_graph_style = {
+            'margin-top': '30px',
+            'height': '500px',
+            'backgroundColor': 'white',
+            'border': '1px solid #CCCCCC',
+            'border-radius': '10px',
+            'padding': '10px 0px 510px 0px',
+            'display': 'block'
+        }
+    
         buy_date, recommended_buy_price, sell_date, recommended_sell_price = calculate_recommendations(data, model_type, forecast_data, earnings_percentage)
 
         recommendations = dbc.Container([
@@ -286,4 +326,7 @@ def register_callbacks(app):
             ], className='fade-in-card', style={'margin-top': '5px', 'text-align': 'center'})
         ], className='fade-in-element', style={'display': 'flex', 'justify-content': 'center'})
 
-        return forecast_fig, recommendations
+        recommendations_style = {'margin-top': '20px', 'text-align': 'center'}
+        loading_style = first_click_style if n_clicks and n_clicks < 1 else subsequent_click_style
+
+        return forecast_fig, forecast_graph_style, recommendations, recommendations_style, loading_style

@@ -66,17 +66,67 @@ layout = dbc.Container([
                     className='radio-group fade-in-element',
                     style={'font-family': 'Hanken Grotesk'}
                 ),
+                dbc.Row(
+                    dbc.Col(
+                        dbc.Button("Generate Forecast", id='generate-forecast-btn', style={'display': 'block'}, className='fade-in-button'),
+                        width="auto",
+                        style={'display': 'flex', 'justify-content': 'center', 'margin-top': '20px'}
+                    ),
+                    className="mb-4 justify-content-center"
+                ),
             ], style={'text-align': 'center'}),
-            dcc.Loading(
-                id="loading-graph",
-                type="default",
-                children=[
-                    dcc.Graph(id='price-graph', className='fade-in-graph', style={'margin-top': '30px', 'margin-bottom': '30px', 'height': '500px', 'backgroundColor': 'white', 'border': '1px solid #CCCCCC', 'border-radius': '10px', 'padding': '10px 0px 510px 0px'}),
-                    dcc.Graph(id='forecast-graph', className='fade-in-graph', style={'margin-top': '30px', 'height': '500px', 'backgroundColor': 'white', 'border': '1px solid #CCCCCC', 'border-radius': '10px', 'padding': '10px 0px 510px 0px'})
-                ],
-                style={'min-height': '600px'}
+            html.Div(
+                dcc.Graph(
+                    id='price-graph',
+                    className='fade-in-graph',
+                    style={
+                        'margin-top': '20px',
+                        'margin-bottom': '30px',
+                        'height': '500px',
+                        'backgroundColor': 'white',
+                        'border': '1px solid #CCCCCC',
+                        'border-radius': '10px',
+                        'padding': '10px 0px 510px 0px'
+                    }
+                ),
+                className="position-relative"
             ),
-            html.Div(id='recommendations-container', className='fade-in-element', style={'margin-top': '20px', 'text-align': 'center', 'font-family': 'Hanken Grotesk'})
+            html.Div(
+                dcc.Loading(
+                    id="loading-forecast",
+                    type="default",
+                    children=[
+                        dcc.Graph(
+                            id='forecast-graph',
+                            className='fade-in-graph',
+                            style={
+                                'display': 'none',
+                                'margin-top': '30px',
+                                'height': '500px',
+                                'backgroundColor': 'white',
+                                'border': '1px solid #CCCCCC',
+                                'border-radius': '10px',
+                                'padding': '10px 0px 510px 0px'
+                            }
+                        ),
+                        html.Div(
+                            id='recommendations-container',
+                            className='fade-in-element',
+                            style={
+                                'display': 'none',
+                                'margin-top': '20px',
+                                'text-align': 'center',
+                                'font-family': 'Hanken Grotesk'
+                            }
+                        )
+                    ],
+                    style={
+                        'position': 'relative',
+                        'min-height': '600px',
+                        'z-index': '1'
+                    }
+                )
+            ),
         ])
     ], style={'margin-bottom': '20px'}),
 ], fluid=True, className="container")
