@@ -27,7 +27,7 @@ app.index_string = '''
     <head>
         {%metas%}
         <title>{%title%}</title>
-        <link rel="icon" type="image/x-icon" href="/assets/favicon.ico">
+        <link rel="icon" type="image/x-icon" href="src/assets/favicon.ico">
         {%css%}
         <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400&family=Prata&display=swap" rel="stylesheet">
     </head>

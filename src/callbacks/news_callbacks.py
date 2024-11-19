@@ -1,14 +1,7 @@
 from dash import Input, Output, State, callback_context, html
 import dash_bootstrap_components as dbc
 from datetime import datetime
-from helpers.news_helpers import (
-    get_stock_news,
-    get_stock_performance_data,
-    get_stock_ratings,
-    display_ratings_table,
-    display_performance_data,
-    generate_news_card
-)
+from helpers.news_helpers import get_stock_news, get_stock_performance_data, get_stock_ratings, display_ratings_table, display_performance_data, generate_news_card
 
 def register_callbacks(app):
     # Store callback for click count
