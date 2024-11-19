@@ -2,16 +2,14 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 from finvizfinance.quote import finvizfinance
-from dash import dcc, html, callback_context
+from dash import html, dcc
 import dash_bootstrap_components as dbc
-from dash import Input, Output, State
-from datetime import datetime
 import pandas as pd
-from app_instance import app
 
+# Cache for logos to avoid repeated requests
 logo_cache = {}
 
-# Function to fetch the logo of the news source with caching
+# Fetch news logo with caching
 def fetch_news_logo(news_link):
     if news_link in logo_cache:
         return logo_cache[news_link]
@@ -53,7 +51,7 @@ def fetch_news_logo(news_link):
         print(f"Error fetching logo: {e}")
         return "default_logo.png"
 
-# Function to get ratings
+# Get stock ratings
 def get_stock_ratings(ticker, limit=10):
     stock = finvizfinance(ticker)
     ratings = stock.ticker_outer_ratings()
@@ -68,7 +66,7 @@ def get_stock_ratings(ticker, limit=10):
 
     return limited_ratings, total_ratings
 
-# Function to create the styled ratings table
+# Create the styled ratings table
 def display_ratings_table(ratings_df):
     table_rows = []
 
@@ -99,7 +97,6 @@ def display_ratings_table(ratings_df):
             ])
         )
 
-    # Create the table without bordered=True and apply custom CSS for a unified border
     table = dbc.Table([
         html.Thead(
             html.Tr([
@@ -113,19 +110,15 @@ def display_ratings_table(ratings_df):
         html.Tbody(table_rows)
     ], striped=True, hover=True, responsive=True, className='custom-table')
 
-    # Wrap in a card for the outer rounded border and fade-in effect
     table_card = dbc.Card(
         table,
-        className='fade-in-table',  # Apply fade-in effect to the outer card for border and content
-        style={
-            'border-radius': '8px',  # Outer rounded corners
-            'overflow': 'hidden'  # Ensures rounded corners are applied
-        }
+        className='fade-in-table',
+        style={'border-radius': '8px', 'overflow': 'hidden'}
     )
 
     return table_card
 
-# Function to get news
+# Get stock news
 def get_stock_news(ticker):
     stock = finvizfinance(ticker)
     news_df = stock.ticker_news()
@@ -133,7 +126,7 @@ def get_stock_news(ticker):
     total_news = len(news_df)  # Get the total count of news articles
     return news_df, total_news
 
-# Function to get stock performance data
+# Get stock performance data
 def get_stock_performance_data(ticker):
     stock = finvizfinance(ticker)
     snapshot = stock.ticker_fundament()
@@ -166,7 +159,51 @@ def get_stock_performance_data(ticker):
     }
     return performance_data
 
-# Helper function to determine color based on financial thresholds
+# Generate a news card
+def generate_news_card(news_item):
+    logo_url = fetch_news_logo(news_item['Link'])
+    header_components = [
+        dbc.Col(
+            html.H4(
+                news_item['Title'],
+                style={'font-size': '16px', 'font-weight': 'bold', 'margin': '0'}
+            ),
+            width=True
+        )
+    ]
+    if logo_url != "default_logo.png":
+        header_components.append(
+            dbc.Col(
+                dbc.CardImg(
+                    src=logo_url,
+                    style={'width': 'auto', 'max-width': '140px', 'max-height': '30px', 'padding-left': '10px', 'object-fit': 'contain', 'overflow': 'visible'}
+                ),
+                width="auto",
+                className="d-flex align-items-center justify-content-end"
+            )
+        )
+    return dbc.Card(
+        [
+            dbc.CardHeader(
+                dbc.Row(
+                    header_components,
+                    align="center",
+                    className="g-0"
+                ),
+                style={'padding': '10px 20px'}
+            ),
+            dbc.CardBody(
+                [
+                    html.P(f"Source: {news_item['Source']}", style={'font-size': '14px', 'color': '#555'}),
+                    html.P(f"Date: {news_item['Date']}", style={'font-size': '12px', 'color': '#888'}),
+                    dcc.Link("Link to Full Story", href=news_item['Link'], target="_blank", style={'font-size': '14px', 'color': '#007bff'})
+                ]
+            )
+        ],
+        style={'position': 'relative', 'height': '100%'},
+        className='fade-in-card'
+    )
+
 def determine_color(label, value):
     try:
         value = float(value.strip('%'))
@@ -260,8 +297,7 @@ def determine_color(label, value):
             return 'black'
     except ValueError:
         return 'black'
-
-# Function to create the transposed performance data table with styled cells
+    
 def display_performance_data(performance_data):
     table = dbc.Table([
         html.Tr([
@@ -306,284 +342,3 @@ def display_performance_data(performance_data):
     ], bordered=True, striped=True, hover=True, responsive=True, className='fade-in-element')
     
     return table
-
-# Function to generate news card with logos
-def generate_news_card(news_item):
-    logo_url = fetch_news_logo(news_item['Link'])
-    
-    # Define the main components of the card header row
-    header_components = [
-        dbc.Col(
-            html.H4(
-                news_item['Title'],
-                style={
-                    'font-size': '16px',
-                    'font-weight': 'bold',
-                    'margin': '0'
-                }
-            ),
-            width=True
-        )
-    ]
-    
-    # Add the logo only if it is not the default logo
-    if logo_url != "default_logo.png":
-        header_components.append(
-            dbc.Col(
-                dbc.CardImg(
-                    src=logo_url,
-                    style={
-                        'width': 'auto',
-                        'max-width': '140px',
-                        'max-height': '30px',
-                        'padding-left': '10px',
-                        'object-fit': 'contain',
-                        'overflow': 'visible'
-                    }
-                ),
-                width="auto",
-                className="d-flex align-items-center justify-content-end"
-            )
-        )
-    
-    # Construct the card with conditionally added logo
-    return dbc.Card(
-        [
-            dbc.CardHeader(
-                dbc.Row(
-                    header_components,
-                    align="center",
-                    className="g-0"
-                ),
-                style={
-                    'padding': '10px 20px'
-                }
-            ),
-            dbc.CardBody(
-                [
-                    html.P(
-                        f"Source: {news_item['Source']}",
-                        style={
-                            'font-size': '14px',
-                            'color': '#555',
-                            'margin': '0',
-                            'padding-bottom': '5px'
-                        }
-                    ),
-                    html.P(
-                        f"Date: {news_item['Date']}",
-                        style={
-                            'font-size': '12px',
-                            'color': '#888',
-                            'margin': '0',
-                            'padding-bottom': '12px'
-                        }
-                    ),
-                    dcc.Link(
-                        "Link to Full Story",
-                        href=news_item['Link'],
-                        target="_blank",
-                        style={
-                            'font-size': '14px',
-                            'color': '#007bff',
-                            'margin': '0',
-                            'padding-bottom': '5px'
-                        }
-                    )
-                ],
-                style={
-                    'display': 'flex',
-                    'flex-direction': 'column',
-                    'justify-content': 'center',
-                    'height': '100%'
-                }
-            )
-        ],
-        style={
-            'position': 'relative',
-            'height': '100%'
-        },
-        className='fade-in-card'
-    )
-
-layout = dbc.Container([
-    html.H1("Stock News & Performance", className='fade-in-element', style={'text-align': 'center', 'margin-top': '40px', 'font-family': 'Prata'}),
-    dcc.Store(id='clicks-store', data=1),
-    dbc.Row(
-        justify="center",
-        children=[
-            dbc.Col(
-                html.H4('Select Stock', className='fade-in-element', style={'margin-right': '10px', 'text-align': 'center'}),
-                width="auto",
-                className="d-flex align-items-center"
-            ),
-            dbc.Col(
-                dcc.Dropdown(
-                    id='stock-dropdown',
-                    options=[
-                        {'label': 'AAPL', 'value': 'AAPL'},
-                        {'label': 'AMZN', 'value': 'AMZN'},
-                        {'label': 'NVDA', 'value': 'NVDA'},
-                        {'label': 'ASML', 'value': 'ASML'},
-                        {'label': 'TSLA', 'value': 'TSLA'},
-                        {'label': 'GOOGL', 'value': 'GOOGL'},
-                        {'label': 'MARA', 'value': 'MARA'},
-                        {'label': 'RIOT', 'value': 'RIOT'},
-                        {'label': 'MSFT', 'value': 'MSFT'},
-                        {'label': 'NFLX', 'value': 'NFLX'},
-                        {'label': 'SMCI', 'value': 'SMCI'},
-                        {'label': 'MSTR', 'value': 'MSTR'}
-                    ],
-                    value='AAPL',
-                    className='fade-in-element',
-                    style={'margin-bottom': '20px'}
-                ),
-                width=4
-            )
-        ],
-        className="mb-3"
-    ),
-    dbc.Row(
-        dbc.Col(
-            dcc.Loading(
-                id="loading-full-content",
-                type="default",
-                children=html.Div(
-                    id='data-content',
-                    children=[
-                        dbc.Row([
-                            dbc.Col(html.H3("Relevant Information", id='info-title', className='fade-in-text', style={'text-align': 'center', 'font-family': 'Prata', 'display': 'none'}), style={'text-align': 'center'}, width=12),
-                        ]),
-                        dbc.Row([
-                            dbc.Col(html.Div(id='performance-table', className='fade-in-element'), width=12)
-                        ], style={'margin-bottom': '20px'}),
-                        dbc.Row([
-                            dbc.Col(html.H3("Latest News", id='news-title', className='fade-in-text', style={'text-align': 'center', 'font-family': 'Prata', 'display': 'none'}), style={'text-align': 'center'}, width=12),
-                        ]),
-                        dbc.Row(
-                            id='news-cards-row', 
-                            className="g-3 fade-in-element", 
-                            style={'margin-bottom': '20px'}
-                        ),
-                        dbc.Row(
-                            dbc.Col(
-                                dbc.Button("Load More News", id='load-more-button', color="primary", style={'display': 'block'}),
-                                width="auto",
-                                style={'display': 'flex', 'justify-content': 'center', 'margin-top': '10px'}
-                            ),
-                            className="mb-4 justify-content-center"
-                        ),
-                        dbc.Row([
-                            dbc.Col(html.H3("Ratings", id='ratings-title', className='fade-in-text', style={'text-align': 'center', 'font-family': 'Prata', 'display': 'none'}), style={'text-align': 'center'}, width=12),
-                        ]),
-                        dbc.Row([
-                            dbc.Col([
-                                html.Div(id='ratings-table', className='fade-in-table'),
-                                dbc.Row(
-                                    dbc.Col(
-                                        dbc.Button("Load More Ratings", id='load-more-ratings-button', color="primary", style={'display': 'block'}),
-                                        width="auto"
-                                    ),
-                                    justify='center',
-                                    style={'margin-top': '10px'}
-                                )
-                            ], width=12)
-                        ])
-                    ],
-                    style={'min-height': '600px'}
-                )
-            )
-        )
-    )
-], fluid=True, className="container")
-
-@app.callback(
-    Output('clicks-store', 'data'),
-    [Input('stock-dropdown', 'value'), Input('load-more-button', 'n_clicks')],
-    [State('clicks-store', 'data')]
-)
-def update_click_count(selected_stock, n_clicks, clicks_data):
-    # Reset to 1 if the stock changes or initialize with 1 for the first load
-    if callback_context.triggered[0]['prop_id'] == 'stock-dropdown.value':
-        return 1
-    elif n_clicks:
-        return clicks_data + 1
-    return clicks_data
-
-# Main callback to update content based on click count
-@app.callback(
-    [
-        Output('performance-table', 'children'),
-        Output('news-cards-row', 'children'),  # Single Output for news-cards-row
-        Output('info-title', 'style'),
-        Output('news-title', 'style'),
-        Output('ratings-table', 'children'),
-        Output('ratings-title', 'style'),
-        Output('load-more-ratings-button', 'n_clicks'),
-        Output('load-more-ratings-button', 'style'),  # Ratings button visibility
-        Output('load-more-button', 'style')  # News button visibility
-    ],
-    [
-        Input('stock-dropdown', 'value'),
-        Input('clicks-store', 'data'),
-        Input('load-more-ratings-button', 'n_clicks'),
-        Input('load-more-button', 'n_clicks')
-    ],
-    [
-        State('load-more-ratings-button', 'n_clicks'),
-        State('clicks-store', 'data')
-    ]
-)
-def update_news_performance_and_ratings(
-    ticker, clicks_data, load_more_ratings_clicks, load_more_news_clicks, prev_ratings_clicks, prev_clicks_store
-):
-    # Check if stock selection changed by comparing with callback context
-    if callback_context.triggered[0]['prop_id'] == 'stock-dropdown.value':
-        ratings_limit = 10
-        load_more_ratings_clicks = 0
-    else:
-        ratings_limit = None if load_more_ratings_clicks else 10
-
-    # Get news data and limit based on clicks
-    news_df, total_news = get_stock_news(ticker)
-    news_limit = 4 * clicks_data  # Display news based on click count
-    displayed_news = news_df.head(news_limit)
-    news_cards = [dbc.Col(generate_news_card(news), width=6) for _, news in displayed_news.iterrows()]
-
-    # Add message if no more news
-    if len(displayed_news) >= total_news:
-        news_cards.append(
-            dbc.Col(
-                html.P(f"No More News for {datetime.today().strftime('%A, %d %b. %Y')}",
-                       style={'text-align': 'center'}),
-                width=12
-            )
-        )
-        news_button_style = {'display': 'none'}  # Hide the button
-    else:
-        news_button_style = {'display': 'block'}  # Show the button
-
-    # Get performance data
-    performance_table = display_performance_data(get_stock_performance_data(ticker))
-
-    # Get ratings data with the appropriate limit
-    ratings_df, total_ratings = get_stock_ratings(ticker, limit=ratings_limit)
-    ratings_table = display_ratings_table(ratings_df)
-
-    # Determine if the ratings button should be shown
-    ratings_button_style = {'display': 'block'} if len(ratings_df) < total_ratings else {'display': 'none'}
-
-    # Set styles to show all elements
-    show_style = {'display': 'block'}
-
-    return (
-        performance_table, 
-        news_cards,  # Combined logic for news-cards-row
-        show_style, 
-        show_style, 
-        ratings_table, 
-        show_style, 
-        load_more_ratings_clicks, 
-        ratings_button_style, 
-        news_button_style
-    )

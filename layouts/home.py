@@ -1,6 +1,5 @@
 import dash_bootstrap_components as dbc
 
-# Layout for home page
 layout = dbc.Container(
     [
         dbc.Row(

@@ -93,7 +93,8 @@ def forecast_without_rolling(best_model, test_df, scaler, feature_cols, y_test, 
         
         feature_row['Adj Close'] = predicted_close
         forecast_input = pd.concat([forecast_input, pd.DataFrame(feature_row, index=[next_date])])
-        forecast_df = pd.concat([forecast_df, pd.DataFrame(feature_row, index=[next_date])])
+        if not pd.DataFrame(feature_row).dropna(how='all').empty:
+            forecast_df = pd.concat([forecast_df, pd.DataFrame(feature_row, index=[next_date])])
 
     return pd.Series(y_pred_test, index=test_df.index), pd.Series(forecast_df['Adj Close'], index=forecast_df.index)
 
