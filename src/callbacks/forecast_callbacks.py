@@ -1,10 +1,59 @@
-from dash import Input, Output, State, html
+from dash import Input, Output, State, html, dcc
 import dash_bootstrap_components as dbc
 import plotly.graph_objs as go
+from helpers.forecast_helpers import fetch_stock_data, create_metrics_card, calculate_metrics, create_growth_bar, create_profitability_bar, create_volatility_graph 
 from helpers.forecast_helpers import calculate_moving_averages, create_price_figure, perform_forecast, calculate_recommendations
 from models.utils import download_data
 
 def register_callbacks(app):
+    @app.callback(
+        Output('metrics-cards-row', 'children'),
+        [Input('index-dropdown', 'value')]
+    )
+    def update_metrics_cards(ticker):
+        stock_data, stock_info = fetch_stock_data(ticker)
+        metrics = calculate_metrics(stock_data, stock_info)
+        return [create_metrics_card(metric) for metric in metrics]
+
+    @app.callback(
+        Output('growth-bar', 'figure'),
+        [Input('index-dropdown', 'value')]
+    )
+    def update_growth_bar(ticker):
+        stock_data, stock_info = fetch_stock_data(ticker)
+        growth_metrics = {
+            'Revenue Growth (YoY)': stock_info.get('revenueGrowth'),
+            'Earnings Growth (YoY)': stock_info.get('earningsGrowth'),
+            'Revenue Quarterly Growth (QoQ)': stock_info.get('revenueQuarterlyGrowth'),
+            'Earnings Quarterly Growth (QoQ)': stock_info.get('earningsQuarterlyGrowth')
+        }
+        growth_metrics = {k: v * 100 for k, v in growth_metrics.items() if v is not None}
+        return create_growth_bar(growth_metrics)
+
+    @app.callback(
+        Output('profitability-bar', 'figure'),
+        [Input('index-dropdown', 'value')]
+    )
+    def update_profitability_bar(ticker):
+        stock_data, stock_info = fetch_stock_data(ticker)
+        profitability_metrics = {
+            'Profit Margins': stock_info.get('profitMargins'),
+            'Gross Margins': stock_info.get('grossMargins'),
+            'Operating Margins': stock_info.get('operatingMargins'),
+            'Return on Assets': stock_info.get('returnOnAssets'),
+            'Return on Equity': stock_info.get('returnOnEquity')
+        }
+        profitability_metrics = {k: v * 100 for k, v in profitability_metrics.items() if v is not None}
+        return create_profitability_bar(profitability_metrics)
+
+    @app.callback(
+        Output('volatility-graph', 'figure'),
+        [Input('index-dropdown', 'value')]
+    )
+    def update_volatility_graph(ticker):
+        stock_data, _ = fetch_stock_data(ticker)
+        return create_volatility_graph(stock_data)
+
     @app.callback(
         Output('price-graph', 'figure'),
         [Input('index-dropdown', 'value')]
@@ -20,6 +69,8 @@ def register_callbacks(app):
             Output('forecast-graph', 'style'),
             Output('recommendations-container', 'children'),
             Output('recommendations-container', 'style'),
+            Output('gauge-container', 'children'),
+            Output('gauge-container', 'style'),
             Output('loading-forecast', 'style'), 
         ],
         [
@@ -35,7 +86,6 @@ def register_callbacks(app):
     def update_forecast_graph(n_clicks, ticker, model_type, forecast_days, earnings_percentage):
         first_click_style = {
             'position': 'relative',
-            'min-height': '600px',
             'z-index': '1'
         }
         subsequent_click_style = {
@@ -51,9 +101,10 @@ def register_callbacks(app):
         }
 
         if not n_clicks:
-            return {}, {'display': 'none'}, None, {'display': 'none'}, first_click_style
-
+            return {}, {'display': 'none'}, None, {'display': 'none'}, None, {'display': 'none'},first_click_style
+        
         data = download_data(ticker)
+        _, stock_info = fetch_stock_data(ticker)
         shapes = []
 
         if model_type == 'XGBoost':
@@ -282,7 +333,7 @@ def register_callbacks(app):
                         ],
                         'titlefont': {'family': 'Hanken Grotesk', 'color': '#050A30'},
                         'tickfont': {'family': 'Hanken Grotesk'},
-                        'showline': True,  # Ensure the x-axis line is shown
+                        'showline': True,
                         'linewidth': 1,
                         'linecolor': 'black'
                     },
@@ -305,28 +356,98 @@ def register_callbacks(app):
             'padding': '10px 0px 510px 0px',
             'display': 'block'
         }
+
+        recommendation_key = stock_info.get('recommendationKey', 'N/A').capitalize()
+        recommendation_mean = stock_info.get('recommendationMean', 'N/A')
+
+        gauge_graph = go.Figure(go.Indicator(
+            mode="gauge+number+delta",
+            value=recommendation_mean if recommendation_mean != 'N/A' else 0,
+            delta={'reference': 2.5},
+            gauge={
+                'axis': {'range': [1, 5], 'tickvals': [1, 2, 3, 4, 5], 'ticktext': ['Strong Buy', 'Buy', 'Hold', 'Sell', 'Strong Sell']},
+                'bar': {'color': "green" if recommendation_mean and recommendation_mean < 3 else "red"},
+                'steps': [
+                    {'range': [1, 2], 'color': "lightgreen"},
+                    {'range': [2, 3], 'color': "yellow"},
+                    {'range': [3, 4], 'color': "orange"},
+                    {'range': [4, 5], 'color': "red"}
+                ],
+                'threshold': {
+                    'line': {'color': "blue", 'width': 4},
+                    'thickness': 0.75,
+                    'value': recommendation_mean if recommendation_mean != 'N/A' else 0
+                }
+            },
+            title={
+                'text': f'Market Sentiment Recommendation: {recommendation_key.replace("_", " ").title()}', 
+                'font': {'family': 'Prata', 'size': 18, 'color': '#050A30'}
+            }
+        ))
+        gauge_graph.update_layout(
+            font={'family': 'Hanken Grotesk', 'color': '#050A30'},
+            margin=dict(l=20, r=20, t=50, b=20),
+            height=250,
+            paper_bgcolor="white"
+        )
+        gauge_graph_style = {
+            'display': 'block',
+            'justify-content': 'center',
+            'align-items': 'center',
+            'backgroundColor': 'white',
+            'border': '1px solid #CCCCCC',
+            'border-radius': '10px',
+            'overflow': 'hidden',
+            'padding': '10px',
+        }
     
         buy_date, recommended_buy_price, sell_date, recommended_sell_price = calculate_recommendations(data, model_type, forecast_data, earnings_percentage)
 
         recommendations = dbc.Container([
-            dbc.Card([
-                dbc.CardBody([
-                    html.H4("Investment Recommendations", className="card-title", style={'color': '#050A30', 'font-family': 'Prata', 'text-align': 'center'}),
+            html.Div([
+                html.H5("Buy and Sell Strategy for Target Earnings", 
+                        className="fade-in-text", 
+                        style={'color': '#050A30', 
+                            'font-family': 'Prata', 
+                            'text-align': 'center', 
+                            'margin-bottom': '35px'}),
+                html.Div([
                     html.Div([
-                        html.Div([
-                            html.Img(src='/assets/forecast/buy.png', style={'width': '30px', 'margin-right': '15px'}),
-                            html.Span(f"Buy Price: ${recommended_buy_price:.2f} on {buy_date}", style={'color': '#050A30', 'font-family': 'Hanken Grotesk', 'font-size': '18px'})
-                        ], style={'display': 'flex', 'align-items': 'center', 'justify-content': 'center'}),
-                        html.Div([
-                            html.Img(src='/assets/forecast/sell.png', style={'width': '30px', 'margin-right': '15px'}),
-                            html.Span(f"Sell Price: ${recommended_sell_price} on {sell_date}", style={'color': '#050A30', 'font-family': 'Hanken Grotesk', 'font-size': '18px'})
-                        ], style={'display': 'flex', 'align-items': 'center', 'justify-content': 'center', 'margin-top': '20px'})
-                    ], style={'text-align': 'center', 'display': 'flex', 'flex-direction': 'column', 'align-items': 'center', 'width': '600px'})
-                ])
-            ], className='fade-in-card', style={'margin-top': '5px', 'text-align': 'center'})
-        ], className='fade-in-element', style={'display': 'flex', 'justify-content': 'center'})
+                        html.Img(src='/assets/forecast/buy.png', style={'width': '50px', 'margin-right': '15px'}),
+                        html.Span(f"Buy Price: ${recommended_buy_price:.2f} on {buy_date}", 
+                                style={'color': '#050A30', 'font-family': 'Hanken Grotesk', 'font-size': '18px'})
+                    ], style={'display': 'flex', 'align-items': 'center', 'justify-content': 'center'}),
+                    html.Div([
+                        html.Img(src='/assets/forecast/sell.png', style={'width': '50px', 'margin-right': '15px'}),
+                        html.Span(f"Sell Price: ${recommended_sell_price} on {sell_date}", 
+                                style={'color': '#050A30', 'font-family': 'Hanken Grotesk', 'font-size': '18px'})
+                    ], style={'display': 'flex', 'align-items': 'center', 'justify-content': 'center', 'margin-top': '20px'})
+                ], style={
+                    'text-align': 'center', 
+                    'display': 'flex', 
+                    'flex-direction': 'column', 
+                    'align-items': 'center', 
+                    'width': '600px'
+                })
+            ], style={'display': 'flex', 'flex-direction': 'column', 'align-items': 'center'})
+        ], className='fade-in-element', style={
+            'display': 'flex', 
+            'justify-content': 'center', 
+            'align-items': 'center'
+        })
 
-        recommendations_style = {'margin-top': '20px', 'text-align': 'center'}
+        recommendations_style = {
+            'display': 'flex',
+            'flex-direction': 'column',
+            'justify-content': 'center',
+            'align-items': 'center',
+            'padding': '10px',
+            'height': '100%',
+            'overflow': 'hidden',
+            'border': '1px solid #CCCCCC',
+            'border-radius': '10px',
+            'backgroundColor': 'white'
+        }
         loading_style = first_click_style if n_clicks and n_clicks < 1 else subsequent_click_style
 
-        return forecast_fig, forecast_graph_style, recommendations, recommendations_style, loading_style
+        return forecast_fig, forecast_graph_style, recommendations, recommendations_style, dcc.Graph(figure=gauge_graph), gauge_graph_style, loading_style

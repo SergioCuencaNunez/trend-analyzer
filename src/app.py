@@ -16,9 +16,9 @@ external_stylesheets = [dbc.themes.BOOTSTRAP]
 
 # Initialize Dash app
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
-server = app.server  # Expose the WSGI application
+server = app.server
 app.title = "TrendAnalyzer"
-app._favicon = 'favicon.ico'  # Reference to the favicon
+app._favicon = 'assets/favicon.ico'
 
 # Custom index HTML
 app.index_string = '''
@@ -27,7 +27,7 @@ app.index_string = '''
     <head>
         {%metas%}
         <title>{%title%}</title>
-        <link rel="icon" type="image/x-icon" href="src/assets/favicon.ico">
+        <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
         {%css%}
         <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400&family=Prata&display=swap" rel="stylesheet">
     </head>
@@ -86,7 +86,7 @@ app.layout = html.Div([
     html.Footer([
         html.P([
             dcc.Link('Terms and Conditions', href='/terms', className='footer-link'),
-            " | © Sergio Cuenca Núñez, December 2024 | Version: 2.2"
+            " | © Sergio Cuenca Núñez, December 2024 | Version: 3.1"
         ], style={'text-align': 'center'}),
     ], className="footer")
 ])

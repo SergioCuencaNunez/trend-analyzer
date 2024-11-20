@@ -6,10 +6,8 @@ from dash import html, dcc
 import dash_bootstrap_components as dbc
 import pandas as pd
 
-# Cache for logos to avoid repeated requests
 logo_cache = {}
 
-# Fetch news logo with caching
 def fetch_news_logo(news_link):
     if news_link in logo_cache:
         return logo_cache[news_link]
@@ -51,7 +49,6 @@ def fetch_news_logo(news_link):
         print(f"Error fetching logo: {e}")
         return "default_logo.png"
 
-# Get stock ratings
 def get_stock_ratings(ticker, limit=10):
     stock = finvizfinance(ticker)
     ratings = stock.ticker_outer_ratings()
@@ -66,7 +63,6 @@ def get_stock_ratings(ticker, limit=10):
 
     return limited_ratings, total_ratings
 
-# Create the styled ratings table
 def display_ratings_table(ratings_df):
     table_rows = []
 
@@ -118,15 +114,13 @@ def display_ratings_table(ratings_df):
 
     return table_card
 
-# Get stock news
 def get_stock_news(ticker):
     stock = finvizfinance(ticker)
     news_df = stock.ticker_news()
-    news_df['Date'] = pd.to_datetime(news_df['Date']).dt.strftime('%b-%d-%Y')  # Format date for display
-    total_news = len(news_df)  # Get the total count of news articles
+    news_df['Date'] = pd.to_datetime(news_df['Date']).dt.strftime('%b-%d-%Y')
+    total_news = len(news_df)
     return news_df, total_news
 
-# Get stock performance data
 def get_stock_performance_data(ticker):
     stock = finvizfinance(ticker)
     snapshot = stock.ticker_fundament()
@@ -159,7 +153,6 @@ def get_stock_performance_data(ticker):
     }
     return performance_data
 
-# Generate a news card
 def generate_news_card(news_item):
     logo_url = fetch_news_logo(news_item['Link'])
     header_components = [

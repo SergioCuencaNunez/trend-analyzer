@@ -3,30 +3,88 @@ import dash_bootstrap_components as dbc
 
 layout = dbc.Container([
     html.H1("Forecast Stock Prices", className='fade-in-element', style={'text-align': 'center', 'margin-top': '40px', 'font-family': 'Prata'}),
-    dbc.Row([
-        dbc.Col([
-            html.H4('Select the Stock to Predict', className='fade-in-element', style={'margin': '20px 0', 'text-align': 'center'}),
-            dcc.Dropdown(
-                id='index-dropdown',
-                options=[
-                    {'label': 'AAPL', 'value': 'AAPL'},
-                    {'label': 'AMZN', 'value': 'AMZN'},
-                    {'label': 'NVDA', 'value': 'NVDA'},
-                    {'label': 'ASML', 'value': 'ASML'},
-                    {'label': 'TSLA', 'value': 'TSLA'},
-                    {'label': 'GOOGL', 'value': 'GOOGL'},
-                    {'label': 'MARA', 'value': 'MARA'},
-                    {'label': 'RIOT', 'value': 'RIOT'},
-                    {'label': 'MSFT', 'value': 'MSFT'},
-                    {'label': 'NFLX', 'value': 'NFLX'},
-                    {'label': 'SMCI', 'value': 'SMCI'},
-                    {'label': 'MSTR', 'value': 'MSTR'}
-                ],
-                value='AAPL',
-                className='fade-in-element',
-                style={'margin-bottom': '20px'}
+    dbc.Row(
+        justify="center",
+        children=[
+            dbc.Col(
+                html.H4('Select Stock', className='fade-in-element', style={'margin-right': '10px', 'text-align': 'center'}),
+                width="auto",
+                className="d-flex align-items-center"
             ),
-        ], width=4),
+            dbc.Col(
+                dcc.Dropdown(
+                    id='index-dropdown',
+                    options=[
+                        {'label': 'AAPL', 'value': 'AAPL'},
+                        {'label': 'AMZN', 'value': 'AMZN'},
+                        {'label': 'NVDA', 'value': 'NVDA'},
+                        {'label': 'ASML', 'value': 'ASML'},
+                        {'label': 'TSLA', 'value': 'TSLA'},
+                        {'label': 'GOOGL', 'value': 'GOOGL'},
+                        {'label': 'MARA', 'value': 'MARA'},
+                        {'label': 'RIOT', 'value': 'RIOT'},
+                        {'label': 'MSFT', 'value': 'MSFT'},
+                        {'label': 'NFLX', 'value': 'NFLX'},
+                        {'label': 'SMCI', 'value': 'SMCI'},
+                        {'label': 'MSTR', 'value': 'MSTR'}
+                    ],
+                    value='AAPL',
+                    className='fade-in-element',
+                    style={'margin-bottom': '10px'}
+                ),
+                width=4
+            )
+        ],
+        className="mb-3"
+    ),
+    html.H4(f"Metrics", style={'text-align': 'center', 'font-family': 'Prata'}, className='fade-in-element'),
+    dbc.Row(
+        id="metrics-cards-row",
+        justify="center",
+        style={"margin-bottom": "10px"},
+    ),
+    dbc.Row([
+        dbc.Col(dcc.Graph(
+                id='growth-bar', 
+                className='fade-in-graph',
+                style={
+                    'display': 'block',
+                    'backgroundColor': 'white',
+                    'border': '1px solid #CCCCCC',
+                    'border-radius': '10px',
+                    'overflow': 'hidden',
+                    'padding': '10px'
+                    }
+                ), 
+                width=4),
+        dbc.Col(dcc.Graph(
+                id='profitability-bar', 
+                className='fade-in-graph',
+                style={
+                    'display': 'block',
+                    'backgroundColor': 'white',
+                    'border': '1px solid #CCCCCC',
+                    'border-radius': '10px',
+                    'overflow': 'hidden',
+                    'padding': '10px'
+                    }
+                ), 
+                width=4),
+        dbc.Col(dcc.Graph(
+                id='volatility-graph', 
+                className='fade-in-graph',
+                style={
+                    'display': 'block',
+                    'backgroundColor': 'white',
+                    'border': '1px solid #CCCCCC',
+                    'border-radius': '10px', 
+                    'overflow': 'hidden',
+                    'padding': '10px'
+                    }
+                ), 
+                width=4)
+    ]),
+    dbc.Row([
         dbc.Col([
             html.H4('Select the Forecast Period', className='fade-in-element', style={'margin': '20px 0', 'text-align': 'center'}),
             dcc.Dropdown(
@@ -40,7 +98,7 @@ layout = dbc.Container([
                 className='fade-in-element',
                 style={'margin-bottom': '20px'}
             ),
-        ], width=4),
+        ], width=6),
         dbc.Col([
             html.H4('Desired Percentage of Earnings (%)', className='fade-in-element', style={'margin': '20px 0', 'text-align': 'center'}),
             dcc.Input(
@@ -50,7 +108,7 @@ layout = dbc.Container([
                 className='fade-in-element custom-input',
                 style={'margin-bottom': '20px', 'width': '100%'}
             ),
-        ], width=4)
+        ], width=6)
     ]),
     dbc.Row([
         dbc.Col([
@@ -96,6 +154,24 @@ layout = dbc.Container([
                     id="loading-forecast",
                     type="default",
                     children=[
+                        dbc.Row([
+                            dbc.Col(
+                                html.Div(
+                                    id='recommendations-container',
+                                    className='fade-in-element',
+                                    style={'display': 'none'}
+                                ),
+                                width=6
+                            ),
+                            dbc.Col(
+                                html.Div(
+                                    id='gauge-container',
+                                    className='fade-in-graph',
+                                    style={'display': 'none'}
+                                ),
+                                width=6
+                            )
+                        ], style={'margin-top': '20px'}),
                         dcc.Graph(
                             id='forecast-graph',
                             className='fade-in-graph',
@@ -109,16 +185,6 @@ layout = dbc.Container([
                                 'padding': '10px 0px 510px 0px'
                             }
                         ),
-                        html.Div(
-                            id='recommendations-container',
-                            className='fade-in-element',
-                            style={
-                                'display': 'none',
-                                'margin-top': '20px',
-                                'text-align': 'center',
-                                'font-family': 'Hanken Grotesk'
-                            }
-                        )
                     ],
                     style={
                         'position': 'relative',

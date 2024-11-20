@@ -1,9 +1,349 @@
 import pandas as pd
+import yfinance as yf
+import numpy as np
+from dash import html
+import dash_bootstrap_components as dbc
 import plotly.graph_objs as go
 from pandas.tseries.holiday import USFederalHolidayCalendar
 from models.xgboost_model import prepare_and_train_model, forecast_with_rolling, forecast_without_rolling
 from models.prophet_model import fit_prophet, forecast_prophet
 
+def fetch_stock_data(ticker):
+    stock = yf.Ticker(ticker)
+    hist = stock.history(period="1y")
+    info = stock.info
+    return hist, info
+
+def calculate_metrics(stock_data, stock_info):
+    stock_data['MA20'] = stock_data['Close'].rolling(window=20).mean()
+    stock_data['MA50'] = stock_data['Close'].rolling(window=50).mean()
+
+    stock_data['Returns'] = stock_data['Close'].pct_change()
+    stock_data['Volatility'] = stock_data['Returns'].rolling(window=20).std() * np.sqrt(252)
+
+    current_price = stock_info.get('currentPrice', None)
+    shares_outstanding = stock_info.get('sharesOutstanding', None)
+    if current_price and shares_outstanding:
+        current_market_cap = current_price * shares_outstanding
+    else:
+        current_market_cap = None
+
+    current_volume = stock_data['Volume'].iloc[-1] if len(stock_data) >=1 else None
+    current_avg_volume = stock_data['Volume'].rolling(window=20).mean().iloc[-1] if len(stock_data) >= 20 else None
+
+    target_high_price = stock_info.get('targetHighPrice', None)
+    target_low_price = stock_info.get('targetLowPrice', None)
+
+    def get_past_value(series, days_ago):
+        if len(series) >= days_ago + 1:
+            return series.iloc[-days_ago -1]
+        else:
+            return None
+
+    def calculate_trend(current_value, past_value):
+        if current_value and past_value:
+            change = current_value - past_value
+            percent_change = (change / past_value) * 100
+            trend_symbol = '↑' if change > 0 else '↓' if change < 0 else ''
+            trend = f"{trend_symbol} {abs(percent_change):.2f}%"
+        else:
+            trend = 'N/A'
+        return trend
+
+    past_price_week = get_past_value(stock_data['Close'], 5)
+    past_price_month = get_past_value(stock_data['Close'], 21)
+    if past_price_week and shares_outstanding:
+        past_market_cap_week = past_price_week * shares_outstanding
+    else:
+        past_market_cap_week = None
+    if past_price_month and shares_outstanding:
+        past_market_cap_month = past_price_month * shares_outstanding
+    else:
+        past_market_cap_month = None
+
+    market_cap_trend_week = calculate_trend(current_market_cap, past_market_cap_week)
+    market_cap_trend_month = calculate_trend(current_market_cap, past_market_cap_month)
+
+    # Volume trends
+    past_volume_week = get_past_value(stock_data['Volume'], 5)
+    past_volume_month = get_past_value(stock_data['Volume'], 21)
+
+    volume_trend_week = calculate_trend(current_volume, past_volume_week)
+    volume_trend_month = calculate_trend(current_volume, past_volume_month)
+
+    # Average Volume trends
+    avg_volume_series = stock_data['Volume'].rolling(window=20).mean()
+    past_avg_volume_week = get_past_value(avg_volume_series, 5)
+    past_avg_volume_month = get_past_value(avg_volume_series, 21)
+
+    avg_volume_trend_week = calculate_trend(current_avg_volume, past_avg_volume_week)
+    avg_volume_trend_month = calculate_trend(current_avg_volume, past_avg_volume_month)
+
+    # Compile Metrics
+    metrics = [
+        {
+            "title": "Market Cap",
+            "value": f"${current_market_cap / 1e9:,.2f}B" if current_market_cap else 'N/A',
+            "trend_week": market_cap_trend_week,
+            "trend_month": market_cap_trend_month
+        },
+        {
+            "title": "Volume",
+            "value": f"{current_volume:,}" if current_volume else 'N/A',
+            "trend_week": volume_trend_week,
+            "trend_month": volume_trend_month
+        },
+        {
+            "title": "Average Volume",
+            "value": f"{int(current_avg_volume):,}" if current_avg_volume else 'N/A',
+            "trend_week": avg_volume_trend_week,
+            "trend_month": avg_volume_trend_month
+        },
+        {
+            "title": "Prices",
+            "values": {
+                "Current Price": f"${current_price:,.2f}" if current_price else 'N/A',
+                "Target Low Price": f"${target_low_price:,.2f}" if target_low_price else 'N/A',
+                "Target High Price": f"${target_high_price:,.2f}" if target_high_price else 'N/A',
+            }
+        }
+    ]
+    return metrics
+
+def create_metrics_card(metric):
+    if "values" in metric:
+        content = [
+            html.H5(
+                metric["title"],
+                className="card-title",
+                style={"text-align": "center", "margin": "5px 0"} 
+            ),
+        ]
+        for key, value in metric["values"].items():
+            value_color = ""
+            if key == "Target Low Price":
+                value_color = "red"
+            elif key == "Target High Price":
+                value_color = "green"
+            content.append(
+                html.P(
+                    [
+                        html.Span(f"{key}: ", style={"color": "black", "margin-right": "1px"}),
+                        html.Span(value, style={"color": value_color}),
+                    ],
+                    style={
+                        "margin": "1px 0",
+                        "text-align": "center",
+                    }
+                )
+            )
+
+        card_body = dbc.CardBody(
+            content,
+            style={
+                "display": "flex",
+                "flex-direction": "column",
+                "justify-content": "center",
+                "align-items": "center",
+                "height": "100%",
+            }
+        )
+    else:
+        card_content = [
+            html.H5(
+                metric["title"],
+                className="card-title",
+                style={"text-align": "center", "margin": "5px 0"}
+            ),
+            html.H4(
+                metric["value"],
+                className="card-text",
+                style={"text-align": "center", "margin": "5px 0"}
+            ),
+        ]
+        if "trend_week" in metric and "trend_month" in metric:
+            trend_week_color = (
+                "green" if "↑" in metric["trend_week"] else "red" if "↓" in metric["trend_week"] else "black"
+            )
+            trend_month_color = (
+                "green" if "↑" in metric["trend_month"] else "red" if "↓" in metric["trend_month"] else "black"
+            )
+            card_content.extend([
+                html.P(
+                    [
+                        html.Span("Last Week: ", style={"color": "black", "margin-right": "1px"}),
+                        html.Span(metric["trend_week"], style={"color": trend_week_color}),
+                    ],
+                    style={
+                        "margin": "1px 0",
+                        "text-align": "center",
+                    }
+                ),
+                html.P(
+                    [
+                        html.Span("Last Month: ", style={"color": "black", "margin-right": "1px"}),
+                        html.Span(metric["trend_month"], style={"color": trend_month_color}),
+                    ],
+                    style={
+                        "margin": "1px 0",
+                        "text-align": "center",
+                    }
+                )
+            ])
+
+        card_body = dbc.CardBody(
+            card_content,
+            style={
+                "display": "flex",
+                "flex-direction": "column",
+                "justify-content": "center",
+                "align-items": "center",
+                "height": "100%",
+            }
+        )
+    
+    return dbc.Col(
+        dbc.Card(
+            card_body,
+            style={
+                "border-radius": "10px",
+                "height": "100%",
+                "justify-content": "center",
+                "align-items": "center",
+            },
+            className="fade-in-card"
+        ),
+        width=3
+    )
+
+def create_growth_bar(growth_metrics):
+    labels = ['Rev Gr (YoY)', 'Earn Gr (YoY)', 'Rev Gr (QoQ)', 'Earn Gr (QoQ)']
+    values = list(growth_metrics.values())
+
+    return go.Figure(data=[
+        go.Bar(
+            x=labels,
+            y=values,
+            marker=dict(color='blue'),
+            hovertemplate='%{x}: %{y:.2f}%',
+            name='Growth Metrics'
+        )
+    ]).update_layout(
+        title={
+            'text': 'Growth Analysis (%)',
+            'x': 0.5,
+            'xanchor': 'center',
+            'font': {'family': 'Prata', 'color': '#050A30'}
+        },
+        xaxis={
+            'title': 'Metrics',
+            'titlefont': {'family': 'Hanken Grotesk', 'color': '#050A30'},
+            'tickfont': {'family': 'Hanken Grotesk'},
+            'showgrid': True,
+            'gridcolor': 'LightGray',
+            'gridwidth': 0.5,
+        },
+        yaxis={
+            'title': 'Growth (%)',
+            'titlefont': {'family': 'Hanken Grotesk', 'color': '#050A30'},
+            'tickfont': {'family': 'Hanken Grotesk'},
+            'showgrid': True,
+            'gridcolor': 'LightGray',
+            'gridwidth': 0.5,
+        },
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        font={'family': 'Hanken Grotesk'},
+        height=250,
+        margin=dict(l=50, r=50, t=50, b=50)
+    )
+
+def create_profitability_bar(profitability_metrics):
+    labels = ['Profit Mgn', 'Gross Mgn', 'Oper Mgn', 'ROA', 'ROE']
+    values = list(profitability_metrics.values())
+
+    return go.Figure(data=[
+        go.Bar(
+            x=labels,
+            y=values,
+            marker=dict(color='red'),
+            hovertemplate='%{x}: %{y:.2f}%',
+            name='Profitability Metrics'
+        )
+    ]).update_layout(
+        title={
+            'text': 'Profitability Analysis (%)',
+            'x': 0.5,
+            'xanchor': 'center',
+            'font': {'family': 'Prata', 'color': '#050A30'}
+        },
+        xaxis={
+            'title': 'Metrics',
+            'titlefont': {'family': 'Hanken Grotesk', 'color': '#050A30'},
+            'tickfont': {'family': 'Hanken Grotesk'},
+            'showgrid': True,
+            'gridcolor': 'LightGray',
+            'gridwidth': 0.5,
+        },
+        yaxis={
+            'title': 'Percentage (%)',
+            'titlefont': {'family': 'Hanken Grotesk', 'color': '#050A30'},
+            'tickfont': {'family': 'Hanken Grotesk'},
+            'showgrid': True,
+            'gridcolor': 'LightGray',
+            'gridwidth': 0.5,
+        },
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        font={'family': 'Hanken Grotesk'},
+        height=250,
+        margin=dict(l=50, r=50, t=50, b=50)
+    )
+
+
+def create_volatility_graph(stock_data):
+    stock_data['Returns'] = stock_data['Close'].pct_change()
+    stock_data['Volatility'] = stock_data['Returns'].rolling(window=20).std() * np.sqrt(252)
+
+    return go.Figure(data=[
+        go.Scatter(
+            x=stock_data.index,
+            y=stock_data['Volatility'],
+            line=dict(color='green', width=1.5),
+            fill='tozeroy',
+            name='Volatility'
+        )
+    ]).update_layout(
+        title={
+            'text': 'Volatility',
+            'x': 0.5,
+            'xanchor': 'center',
+            'font': {'family': 'Prata', 'color': '#050A30'}
+        },
+        yaxis={
+            'title': 'Volatility',
+            'titlefont': {'family': 'Hanken Grotesk', 'color': '#050A30'},
+            'tickfont': {'family': 'Hanken Grotesk'},
+            'showgrid': True,
+            'gridcolor': 'LightGray',
+            'gridwidth': 0.5,
+        },
+        xaxis={
+            'title': 'Date',
+            'type': 'date',
+            'tickformat': '%b %Y',
+            'titlefont': {'family': 'Hanken Grotesk', 'color': '#050A30'},
+            'tickfont': {'family': 'Hanken Grotesk'},
+            'showgrid': True,
+            'gridcolor': 'LightGray',
+            'gridwidth': 0.5,
+        },
+        plot_bgcolor='white',
+        paper_bgcolor='white',
+        font={'family': 'Hanken Grotesk'},
+        height=250,
+        margin=dict(l=50, r=50, t=50, b=50)
+    )
 
 def calculate_moving_averages(data):
     ma50 = data['Close'].rolling(window=50).mean()
