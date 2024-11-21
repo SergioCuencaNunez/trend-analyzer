@@ -1,6 +1,19 @@
-body {
+html, body {
+    height: 100%;
+    margin: 0;
     background-color: #F4F6FC;
     font-family: 'Hanken Grotesk', sans-serif;
+    height: 100%;
+}
+
+#app-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.main-content {
+    flex: 1;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -36,7 +49,8 @@ b {
     color: #F4F6FC;
     padding: 10px 0;
     text-align: center;
-    margin-top: 20px;
+    width: 100%;
+    margin-top: auto;
 }
 
 .footer-link {

@@ -85,7 +85,7 @@ layout = dbc.Container([
                             ], width=12)
                         ])
                     ],
-                    style={'min-height': '600px'}
+                    style={'min-height': '695px'}
                 )
             )
         )
