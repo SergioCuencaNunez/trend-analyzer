@@ -48,14 +48,10 @@ Trend Analyzer is a web application built with Flask and Dash, designed to analy
 
 2. **Build the Docker Image and Push it to DockerHub**:
    ```sh
+   docker login
    docker buildx create --use
    docker buildx inspect --bootstrap
-   docker buildx build --platform linux/amd64,linux/arm64 -t sergiocuenca1/trend-analyzer --push .
-   ```
-
-3. **Save the Docker Image** (optional for distribution):
-   ```sh
-   docker save -o my-flask-app.tar sergiocuenca1/trend-analyzer
+   docker buildx build --platform linux/amd64,linux/arm64 -t sergiocuenca1/trend-analyzer:v4 --push .
    ```
 
 ---
@@ -64,17 +60,19 @@ Trend Analyzer is a web application built with Flask and Dash, designed to analy
 
 1. **Pull the Docker Image from Docker Hub**:
    ```sh
-   docker pull sergiocuenca1/trend-analyzer:latest
+   docker pull sergiocuenca1/trend-analyzer:v4
    ```
 
 2. **Run the Docker Container** (specifying the platform):
    - **For Intel-based**:
      ```sh
-     docker run --platform linux/amd64 -p 8080:8080 sergiocuenca1/trend-analyzer:latest
+     docker system prune -af --volumes
+     docker run --platform linux/amd64 -p 8080:8080 sergiocuenca1/trend-analyzer:v4
      ```
    - **For M1 or later-based**:
      ```sh
-     docker run --platform linux/arm64 -p 8080:8080 sergiocuenca1/trend-analyzer:latest
+     docker system prune -af --volumes
+     docker run --platform linux/arm64 -p 8080:8080 sergiocuenca1/trend-analyzer:v4
      ```
 
 ---
