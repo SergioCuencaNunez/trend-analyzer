@@ -80,12 +80,11 @@ layout = dbc.Container([
                                         width="auto"
                                     ),
                                     justify='center',
-                                    style={'margin-top': '10px'}
+                                    style={'margin-top': '20px', 'margin-bottom': '20px'}
                                 )
                             ], width=12)
                         ])
                     ],
-                    style={'min-height': '695px'}
                 )
             )
         )

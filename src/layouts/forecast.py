@@ -188,7 +188,6 @@ layout = dbc.Container([
                     ],
                     style={
                         'position': 'relative',
-                        'min-height': '600px',
                         'z-index': '1'
                     }
                 )

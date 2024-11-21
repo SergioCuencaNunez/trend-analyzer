@@ -154,13 +154,13 @@ layout = dbc.Container(
                                 ]
                             ),
                         ],
-                        className='fade-in-card',  # Add this class for animation
+                        className='fade-in-card',
                         style={'text-align': 'center'}
                     ),
                     md=12
                 ),
             ],
-            style={'margin-top': '40px'}
+            style={'margin-top': '40px', 'margin-bottom': '40px'}
         ),
     ],
     className='container-fluid',
