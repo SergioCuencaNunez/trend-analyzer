@@ -351,9 +351,10 @@ def calculate_moving_averages(data):
     return ma50, ma200
 
 def create_price_figure(data, ma50, ma200, ticker):
-    last_price = data['Close'].iloc[-1]
-    min_price = max(0, data['Close'].min() * 0.9)
-    max_price = data['Close'].max() * 1.1
+    close = data['Close']
+    last_price = float(close.iloc[-1])
+    min_price = max(0, close.min() * 0.9)
+    max_price = close.max() * 1.1
 
     return {
         'data': [
