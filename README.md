@@ -3,9 +3,9 @@
   <img src="src/assets/banner-dark.png" alt="Logo" width="500">
 </p>
 
-# Trend Analyzer
+# TrendAnalyzer
 
-Trend Analyzer is a web application built with Flask and Dash, designed to analyze, visualize, and forecast financial trends using various models such as XGBoost and Prophet. Access the application via the following link: [Trend Analyzer App](http://trend-analyzer.onrender.com/).
+TrendAnalyzer is a web application built with Flask and Dash, designed to analyze, visualize, and forecast financial trends using various models such as XGBoost and Prophet. Access the application via the following link: [Trend Analyzer App](http://trend-analyzer.onrender.com/).
 
 ## Overview
 
